@@ -45,4 +45,27 @@ class Nexop::Packet
 
     payload
   end
+
+  ##
+  # Creates a new packet, which contains the given `payload`.
+  #
+  # The padding of the packet is calculated accordingly.
+  #
+  # @param payload [String] A binary string which contains the payload of the
+  #                packet, which should be created by the method.
+  # @return [String] A binary string, which contains the new packet.
+  def self.create(payload)
+    length = ((payload.length + 5) / 8.0).ceil * 8
+    padding_length = length - 5 - payload.length
+
+    if padding_length < 4
+      length += 8
+      padding_length = length - 5 - payload.length
+    end
+
+    data = ""
+    data += [length - 4, padding_length].pack("NC")
+    data += payload
+    data += Array.new(padding_length, 0).pack("C*")
+  end
 end

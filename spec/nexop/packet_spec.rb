@@ -54,4 +54,21 @@ describe Nexop::Packet do
       data.unpack("C*").should == [12, 13, 14]
     end
   end
+
+  context "create" do
+    it "creates a packet with empty payload" do
+      packet = Nexop::Packet.create("")
+      packet.unpack("C*").should == [0, 0, 0, 12, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    end
+
+    it "creates a packet with padding" do
+      packet = Nexop::Packet.create([1, 2, 3, 4, 5, 6].pack("C*"))
+      packet.unpack("C*").should == [0, 0, 0, 12, 5, 1, 2, 3, 4, 5, 6, 0, 0, 0, 0, 0]
+    end
+
+    it "creates a packet a a calculated padding >= 4" do
+      packet = Nexop::Packet.create([1, 2, 3, 4, 5, 6, 7, 8].pack("C*"))
+      packet.unpack("C*").should == [0, 0, 0, 20, 11, 1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    end
+  end
 end
