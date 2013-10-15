@@ -50,4 +50,20 @@ describe Nexop::Message::IO do
       expect{ Nexop::Message::IO.byte_16(:decode, array[0, 15], 0) }.to raise_error(TypeError)
     end
   end
+
+  context "uint32" do
+    include_examples "basic IO examples", :uint32
+
+    it "encodes an int-value" do
+      Nexop::Message::IO.uint32(:encode, 4711).should == [4711].pack("N")
+    end
+
+    it "decodes a binary string" do
+      Nexop::Message::IO.uint32(:decode, [9, 9, 0, 0, 18, 103].pack("C*"), 2).should == [4711, 4]
+    end
+
+    it "cannot decode a smaller binary string" do
+      expect{ Nexop::Message::IO.uint32(:decode, [9, 9, 0, 0, 18].pack("C*"), 2) }.to raise_error(TypeError)
+    end
+  end
 end
