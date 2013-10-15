@@ -53,6 +53,14 @@ module Nexop::Message
       end
     end
 
+    def self.byte_16(op, *args)
+      case op
+      when :encode then encode_byte_16(*args)
+      when :decode then decode_byte_16(*args)
+      else raise ArgumentError, "unsupported operation: #{op}"
+      end
+    end
+
     private
 
     def self.encode_byte(value)
@@ -64,6 +72,22 @@ module Nexop::Message
         [data.unpack("@#{offset}C").first, 1]
       else
         raise ArgumentError, "buffer-overflow, length = #{data.length}, offset = #{offset}"
+      end
+    end
+
+    def self.encode_byte_16(value)
+      if value.size == 16
+        value.pack("C*")
+      else
+        raise TypeError, "invalid array-size: #{value.size}"
+      end
+    end
+
+    def self.decode_byte_16(data, offset)
+      if data.size - offset >= 16
+        [data.unpack("@#{offset}C16"), 16]
+      else
+        raise TypeError, "data too small, length: #{data.size}, offset: #{offset}"
       end
     end
   end
