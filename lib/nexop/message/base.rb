@@ -2,13 +2,36 @@ module Nexop::Message
   ##
   # The base-class for all concrete SSH messages.
   #
-  # Defines a metamodel for concrete messages. The
-  # {Nexop::Message::Base#add_field} method is used assign a datafield to the
-  # message. So, a message can be read from a binary steam and serialized into
-  # a binary form again.
+  # Defines a metamodel for concrete messages. The {add_field} method is used
+  # to assign a datafield to the message. So, a message can be read from a
+  # binary steam and serialized into a binary form again.
   class Base
     ##
-    # Assigns a datafield to
+    # Assigns a datafield to the message-class.
+    #
+    # All {add_field}-assignments defines the meta-model of the message.
+    # Encoding and decoding operations are based on the metamodel of the class.
+    # The order of the fields is defines by the order of the
+    # {add_field}-invocations.
+    #
+    # `name` defines an arbitrary name of the field. For each field-`name` a
+    # getter and setter are created.
+    #
+    # You have to specify the datatype of the field with the `:type`-option.
+    # Check {Nexop::Message::IO} for a list of supported datatypes.
+    #
+    # When you pass an `:default`-option, then you can specify a default-value
+    # which is initial returned.
+    #
+    # Examples:
+    #
+    #     class MyMessage < Nexop::Message::Base
+    #       # Defines a field with the name "type" of type "uint8"
+    #       add_field :type, type: :uint8
+    #
+    #       # Defines a field with the name "length" of type "uint32" and a default-value of 45
+    #       add_field :length, type: :uint32, default: 45
+    #     end
     def self.add_field(name, options = {})
       raise "#{name}: already assigned" if fields.include?(name)
       raise "#{name}: no datatype available" if options[:type].nil?
@@ -39,10 +62,21 @@ module Nexop::Message
       send(method, *args)
     end
 
+    ##
+    # Returns a list with the name of all assigned {add_field fields}.
+    #
+    # @return [Array] The names of all assigned fields
     def self.fields
       (@fields || []).map{ |f| f[:name] }
     end
 
+    ##
+    # Returns the metadata of the field with the given `name`.
+    #
+    # @param name [String] The name of the requested field
+    # @return [Hash] Meta-data assigned to the field with the
+    #         {add_field}-invocation. If no such field exists, `nil` is
+    #         returned.
     def self.field(name)
       (@fields || []).select{ |f| f[:name] == name.to_sym }.first
     end
