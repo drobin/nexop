@@ -92,9 +92,9 @@ describe Nexop::Message::Base do
 
     it "should pass the buffer and the offset to the IO-method" do
       data = [1, 2, 3].pack("C*")
-      Nexop::Message::IO.should_receive(:foo).with(data, 0).and_return(["a", 1])
-      Nexop::Message::IO.should_receive(:bar).with(data, 1).and_return(["b", 1])
-      Nexop::Message::IO.should_receive(:dingens).with(data, 2).and_return(["c", 1])
+      Nexop::Message::IO.should_receive(:foo).with(:decode, data, 0).and_return(["a", 1])
+      Nexop::Message::IO.should_receive(:bar).with(:decode, data, 1).and_return(["b", 1])
+      Nexop::Message::IO.should_receive(:dingens).with(:decode, data, 2).and_return(["c", 1])
       klass.parse(data)
     end
 
@@ -108,6 +108,30 @@ describe Nexop::Message::Base do
       Nexop::Message::IO.should_receive(:bar).and_return(["b", 1])
       Nexop::Message::IO.should_receive(:dingens).and_return(["c", 1])
       expect{ klass.parse([1, 2, 3, 4].pack("C*")) }.to raise_error(ArgumentError)
+    end
+  end
+
+  context "serialize" do
+    it "serializes a message" do
+      Nexop::Message::IO.should_receive(:foo).and_return("a")
+      Nexop::Message::IO.should_receive(:bar).and_return("b")
+      Nexop::Message::IO.should_receive(:dingens).and_return("c")
+      obj.serialize.should == "abc"
+    end
+
+    it "should pass the correct arguments to the IO-methods" do
+      obj.f1 = "a"
+      obj.f2 = "b"
+      obj.f3 = "c"
+      Nexop::Message::IO.should_receive(:foo).with(:encode, "a").and_return("")
+      Nexop::Message::IO.should_receive(:bar).with(:encode, "b").and_return("")
+      Nexop::Message::IO.should_receive(:dingens).with(:encode, "c").and_return("")
+      obj.serialize
+    end
+
+    it "aborts serialization in case of a parser-error" do
+      Nexop::Message::IO.should_receive(:foo).and_raise(TypeError)
+      expect{ obj.serialize }.to raise_error(TypeError)
     end
   end
 end

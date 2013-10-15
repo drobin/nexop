@@ -125,7 +125,7 @@ module Nexop::Message
 
       bytes = fields.inject(0) do |a, e|
         meta = field(e)
-        val, nbytes = Nexop::Message::IO.send(meta[:type], data, a)
+        val, nbytes = Nexop::Message::IO.send(meta[:type], :decode, data, a)
         msg.field_set(meta[:name], val)
         a + nbytes
       end
@@ -133,6 +133,20 @@ module Nexop::Message
       raise ArgumentError, "bffer underflow" if bytes < data.size
 
       msg
+    end
+
+    ##
+    # Serializes the message into a raw-data representation.
+    #
+    # The resulting data can be assigned to a packet.
+    #
+    # @return [String] A binary string represents the encoded message
+    # @raise [TypeError] if the value of one of the fields could not be encoded
+    def serialize
+      self.class.fields.inject("") do |a, e|
+        meta = self.class.field(e)
+        a += Nexop::Message::IO.send(meta[:type], :encode, self.field_get(e))
+      end
     end
   end
 end
