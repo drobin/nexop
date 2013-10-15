@@ -25,16 +25,13 @@ module Nexop::Message
       if method.to_s.end_with?("=")
         self.class.class_eval <<-EOF
         def #{method}(val)
-          @_#{field_name} = val
+          self.field_set("#{field_name}", val)
         end
         EOF
       else
         self.class.class_eval <<-EOF
         def #{method}
-          return @_#{field_name} if @_#{field_name}
-
-          meta = self.class.field("#{field_name}".to_sym)
-          meta[:default]
+          field_get("#{field_name}")
         end
         EOF
       end
@@ -48,6 +45,33 @@ module Nexop::Message
 
     def self.field(name)
       (@fields || []).select{ |f| f[:name] == name.to_sym }.first
+    end
+
+    ##
+    # Returns the value of the field with the name `name`.
+    #
+    # @param name [Symbol] Name of the field
+    # @return The value of the field
+    # @raise [ArgumentError] if the field `name` does not exist
+    def field_get(name)
+      raise ArgumentError, "no such field: #{name}" unless self.class.fields.include?(name.to_sym)
+      if self.instance_variable_defined?("@_#{name}")
+        self.instance_variable_get("@_#{name}")
+      else
+        meta = self.class.field("#{name}".to_sym)
+        meta[:default]
+      end
+    end
+
+    ##
+    # Updates the value of the field with the name `name`.
+    #
+    # @param name [Symbol] The name of the field
+    # @param value The new value
+    # @raise [ArgumentError] if the field `name` does not exist
+    def field_set(name, value)
+      raise ArgumentError, "no such field: #{name}" unless self.class.fields.include?(name.to_sym)
+      self.instance_variable_set("@_#{name}", value)
     end
   end
 end

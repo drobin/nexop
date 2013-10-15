@@ -57,4 +57,24 @@ describe Nexop::Message::Base do
       expect{ obj.xxx }.to raise_error(NoMethodError)
     end
   end
+
+  context "field_get_get" do
+    it "returns the value of an existing field" do
+      obj.field_get("f1").should be_nil
+      obj.field_get(:f2).should == "xxx"
+    end
+
+    it "raises an exception when you pass an unknown field" do
+      expect{ obj.field_get(:xxx) }.to raise_error(ArgumentError)
+    end
+
+    it "can update the value of an exisiting field" do
+      obj.field_set(:f1, "blubber")
+      obj.f1.should == "blubber"
+    end
+
+    it "cannot update the value of an non-existing field" do
+      expect{ obj.field_set(:xxx, "xxx") }.to raise_error(ArgumentError)
+    end
+  end
 end
