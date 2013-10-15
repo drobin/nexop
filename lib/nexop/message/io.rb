@@ -45,5 +45,26 @@ module Nexop::Message
   #
   # @see http://tools.ietf.org/html/rfc4251#section-5
   class IO
+    def self.byte(op, *args)
+      case op
+      when :encode then encode_byte(*args)
+      when :decode then decode_byte(*args)
+      else raise ArgumentError, "unsupported operation: #{op}"
+      end
+    end
+
+    private
+
+    def self.encode_byte(value)
+      [ value ].pack("C")
+    end
+
+    def self.decode_byte(data, offset)
+      if offset < data.length
+        [data.unpack("@#{offset}C").first, 1]
+      else
+        raise ArgumentError, "buffer-overflow, length = #{data.length}, offset = #{offset}"
+      end
+    end
   end
 end
