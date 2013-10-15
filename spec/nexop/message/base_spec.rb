@@ -77,4 +77,37 @@ describe Nexop::Message::Base do
       expect{ obj.field_set(:xxx, "xxx") }.to raise_error(ArgumentError)
     end
   end
+
+  context "parse" do
+    it "creates a message" do
+      Nexop::Message::IO.should_receive(:foo).and_return(["a", 1])
+      Nexop::Message::IO.should_receive(:bar).and_return(["b", 1])
+      Nexop::Message::IO.should_receive(:dingens).and_return(["c", 1])
+      obj = klass.parse([1, 2, 3].pack("C*"))
+      obj.should be_a_kind_of(klass)
+      obj.f1.should == "a"
+      obj.f2.should == "b"
+      obj.f3.should == "c"
+    end
+
+    it "should pass the buffer and the offset to the IO-method" do
+      data = [1, 2, 3].pack("C*")
+      Nexop::Message::IO.should_receive(:foo).with(data, 0).and_return(["a", 1])
+      Nexop::Message::IO.should_receive(:bar).with(data, 1).and_return(["b", 1])
+      Nexop::Message::IO.should_receive(:dingens).with(data, 2).and_return(["c", 1])
+      klass.parse(data)
+    end
+
+    it "aborts in case of a parser-error" do
+      Nexop::Message::IO.should_receive(:foo).and_raise(TypeError)
+      expect{ klass.parse([1, 2, 3].pack("C*")) }.to raise_error(TypeError)
+    end
+
+    it "aborts in case of a data-underflow" do
+      Nexop::Message::IO.should_receive(:foo).and_return(["a", 1])
+      Nexop::Message::IO.should_receive(:bar).and_return(["b", 1])
+      Nexop::Message::IO.should_receive(:dingens).and_return(["c", 1])
+      expect{ klass.parse([1, 2, 3, 4].pack("C*")) }.to raise_error(ArgumentError)
+    end
+  end
 end

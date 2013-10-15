@@ -1,3 +1,5 @@
+require 'nexop/message/io'
+
 module Nexop::Message
   ##
   # The base-class for all concrete SSH messages.
@@ -106,6 +108,31 @@ module Nexop::Message
     def field_set(name, value)
       raise ArgumentError, "no such field: #{name}" unless self.class.fields.include?(name.to_sym)
       self.instance_variable_set("@_#{name}", value)
+    end
+
+    ##
+    # Parses the given binary string `data` and creates the related message.
+    #
+    # @param data [String] A binary string contains the raw data of the
+    #             message.
+    # @return [Base] The requested message, where all the fields are updated
+    #         with the information from the input-buffer.
+    # @raise [TypeError] if a value of one of the fields could not be created
+    # @raise [ArgumentError] if not the whole `data`-buffer could be parsed.
+    #        There are still data left in the buffer.
+    def self.parse(data)
+      msg = self.new
+
+      bytes = fields.inject(0) do |a, e|
+        meta = field(e)
+        val, nbytes = Nexop::Message::IO.send(meta[:type], data, a)
+        msg.field_set(meta[:name], val)
+        a + nbytes
+      end
+
+      raise ArgumentError, "bffer underflow" if bytes < data.size
+
+      msg
     end
   end
 end
