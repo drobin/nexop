@@ -66,4 +66,32 @@ describe Nexop::Message::IO do
       expect{ Nexop::Message::IO.uint32(:decode, [9, 9, 0, 0, 18].pack("C*"), 2) }.to raise_error(TypeError)
     end
   end
+
+  context "boolean" do
+    include_examples "basic IO examples", :boolean
+
+    it "encodes a true-value" do
+      Nexop::Message::IO.boolean(:encode, true).should == [ 1 ].pack("C")
+    end
+
+    it "encodes a false-value" do
+      Nexop::Message::IO.boolean(:encode, false).should == [ 0 ].pack("C")
+    end
+
+    it "decodes 0 to false" do
+      Nexop::Message::IO.boolean(:decode, [1, 2, 0].pack("C*"), 2).should == [ false, 1 ]
+    end
+
+    it "decodes 1 to true" do
+      Nexop::Message::IO.boolean(:decode, [1, 2, 1].pack("C*"), 2).should == [ true, 1 ]
+    end
+
+    it "decodes non-zero to true" do
+      Nexop::Message::IO.boolean(:decode, [1, 2, 3].pack("C*"), 2).should == [ true, 1 ]
+    end
+
+    it "cannot decode an empty binary string" do
+      expect{ Nexop::Message::IO.boolean(:decode, "", 0) }.to raise_error(TypeError)
+    end
+  end
 end

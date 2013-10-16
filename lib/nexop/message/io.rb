@@ -69,6 +69,14 @@ module Nexop::Message
       end
     end
 
+    def self.boolean(op, *args)
+      case op
+      when :encode then encode_boolean(*args)
+      when :decode then decode_boolean(*args)
+      else raise ArgumentError, "unsupported operation: #{op}"
+      end
+    end
+
     private
 
     def self.encode_byte(value)
@@ -106,6 +114,18 @@ module Nexop::Message
     def self.decode_uint32(data, offset)
       if data.length - offset >= 4
         data.unpack("@#{offset}N") << 4
+      else
+        raise TypeError, "data too small, length: #{data.size}, offset: #{offset}"
+      end
+    end
+
+    def self.encode_boolean(value)
+      [ value ? 1 : 0 ].pack("C")
+    end
+
+    def self.decode_boolean(data, offset)
+      if data.size - offset >= 1
+        [ (data.unpack("@#{offset}C").first == 0) ? false : true, 1 ]
       else
         raise TypeError, "data too small, length: #{data.size}, offset: #{offset}"
       end
