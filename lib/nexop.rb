@@ -2,6 +2,8 @@ require "nexop/version"
 require "nexop/packet"
 require "nexop/message/base"
 require "nexop/message/kex_init"
+require "nexop/message/kexdh_init"
+require "nexop/message/kexdh_reply"
 require "nexop/kex"
 
 module Nexop
