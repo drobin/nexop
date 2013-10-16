@@ -1,3 +1,4 @@
+# encoding: utf-8
 require 'spec_helper'
 
 shared_examples "basic IO examples" do |method|
@@ -92,6 +93,54 @@ describe Nexop::Message::IO do
 
     it "cannot decode an empty binary string" do
       expect{ Nexop::Message::IO.boolean(:decode, "", 0) }.to raise_error(TypeError)
+    end
+  end
+
+  context "name_list" do
+    include_examples "basic IO examples", :name_list
+
+    it "encodes an empty list" do
+      Nexop::Message::IO.name_list(:encode, []).should == [ 0, 0, 0, 0 ].pack("C*")
+    end
+
+    it "encodes a list with one element" do
+      Nexop::Message::IO.name_list(:encode, ["foo"]).should == [ 0, 0, 0, 3, 102, 111, 111 ].pack("C*")
+    end
+
+    it "encodes an non-empty list" do
+      Nexop::Message::IO.name_list(:encode, ["foo", "bar"]).should == [ 0, 0, 0, 7, 102, 111, 111, 44, 98, 97, 114 ].pack("C*")
+    end
+
+    it "cannot encode a list with an empty element" do
+      expect{ Nexop::Message::IO.name_list(:encode, ["foo", ""]) }.to raise_error(ArgumentError)
+    end
+
+    it "cannot encode a list with an entry not encoded in US-ASCII" do
+      expect{ Nexop::Message::IO.name_list(:encode, ["foo", "föö"]) }.to raise_error(Encoding::UndefinedConversionError)
+    end
+
+    it "decodes an empty list" do
+      Nexop::Message::IO.name_list(:decode, [1, 0, 0, 0, 0].pack("C*"), 1).should == [ [], 4 ]
+    end
+
+    it "decodes a list with one element" do
+      Nexop::Message::IO.name_list(:decode, [ 5, 0, 0, 0, 3, 102, 111, 111 ].pack("C*"), 1).should == [ ["foo"], 7 ]
+    end
+
+    it "decodes a non-empty list" do
+      Nexop::Message::IO.name_list(:decode, [ 5, 0, 0, 0, 7, 102, 111, 111, 44, 98, 97, 114 ].pack("C*"), 1).should == [ ["foo", "bar"], 11 ]
+    end
+
+    it "cannot decode list list with an element not encoded in US-ASCII" do
+      expect{ Nexop::Message::IO.name_list(:decode, [ 5, 0, 0, 0, 3, 102, 111, 239 ].pack("C*"), 1) }.to raise_error(Encoding::UndefinedConversionError)
+    end
+
+    it "cannot decode a list with an incomplete length-field" do
+      expect{ Nexop::Message::IO.name_list(:decode, [ 5, 0, 0, 0 ].pack("C*"), 1) }.to raise_error(ArgumentError)
+    end
+
+    it "cannot decode a list with an incomplete list" do
+      expect{ Nexop::Message::IO.name_list(:decode, [ 5, 0, 0, 0, 3, 102, 111 ].pack("C*"), 1) }.to raise_error(ArgumentError)
     end
   end
 end

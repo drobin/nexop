@@ -77,6 +77,14 @@ module Nexop::Message
       end
     end
 
+    def self.name_list(op, *args)
+      case op
+      when :encode then encode_name_list(*args)
+      when :decode then decode_name_list(*args)
+      else raise ArgumentError, "unsupported operation: #{op}"
+      end
+    end
+
     private
 
     def self.encode_byte(value)
@@ -129,6 +137,26 @@ module Nexop::Message
       else
         raise TypeError, "data too small, length: #{data.size}, offset: #{offset}"
       end
+    end
+
+    def self.encode_name_list(value)
+      if value.any?{ |elem| elem.empty?  }
+        raise ArgumentError, "empty list-elements cannot be encoded"
+      end
+
+      list = value.join(",").encode("US-ASCII").bytes.to_a
+      [ list.size ].concat(list).pack("NC*")
+    end
+
+    def self.decode_name_list(data, offset)
+      length = data.unpack("@#{offset}N").first
+
+      if length.nil? || data.length - offset < length + 4
+        raise ArgumentError, "data too small, length: #{data.size}, offset: #{offset}"
+      end
+
+      list = data.unpack("@#{offset + 4}Z#{length}").first.encode("US-ASCII")
+      [ list.split(","), length + 4 ]
     end
   end
 end
