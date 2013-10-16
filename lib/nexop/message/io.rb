@@ -93,6 +93,14 @@ module Nexop::Message
       end
     end
 
+    def self.string(op, *args)
+      case op
+      when :encode then encode_string(*args)
+      when :decode then decode_string(*args)
+      else raise ArgumentError, "unsupported operation: #{op}"
+      end
+    end
+
     private
 
     def self.encode_byte(value)
@@ -188,7 +196,7 @@ module Nexop::Message
       length = data.unpack("@#{offset}N").first
 
       if length.nil? || data.length - offset < length + 4
-        raise ArgumentError, "data too small, length: #{data.size}, offset: #{offset}"
+        raise ArgumentError, "data too small, buffer-size: #{data.size}, offset: #{offset}, length: #{length}"
       end
 
       num = data.unpack("@#{offset + 4}C#{length}").inject(0) do |a, e|
@@ -197,6 +205,21 @@ module Nexop::Message
       end
 
       [ num, length + 4 ]
+    end
+
+    def self.encode_string(value)
+      bytes = value.bytes.to_a
+      bytes.unshift(bytes.size).pack("NC*")
+    end
+
+    def self.decode_string(data, offset)
+      length = data.unpack("@#{offset}N").first
+
+      if length.nil? || data.length - offset < length + 4
+        raise ArgumentError, "data too small, buffer-size: #{data.size}, offset: #{offset}, length: #{length}"
+      end
+
+      [ data[offset + 4, length].force_encoding("UTF-8"), length + 4 ]
     end
   end
 end

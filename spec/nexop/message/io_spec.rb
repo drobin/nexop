@@ -179,4 +179,48 @@ describe Nexop::Message::IO do
       expect{ Nexop::Message::IO.mpint(:decode, [0x01, 0x00, 0x00, 0x00, 0x02, 0x00].pack("C*"), 1) }.to raise_error(ArgumentError)
     end
   end
+
+  context "string" do
+    include_examples "basic IO examples", :string
+
+    it "encodes an empty string" do
+      Nexop::Message::IO.string(:encode, "").should == [ 0, 0, 0, 0 ].pack("C*")
+    end
+
+    it "encodes an binary string" do
+      Nexop::Message::IO.string(:encode, [1, 2, 3].pack("C*")).should == [ 0, 0, 0, 3, 1, 2, 3 ].pack("C*")
+    end
+
+    it "encodes an US-ASCII string" do
+      Nexop::Message::IO.string(:encode, "foo").should == [ 0, 0, 0, 3, 102, 111, 111 ].pack("C*")
+    end
+
+    it "encodes an UTF-8 string" do
+      Nexop::Message::IO.string(:encode, "föö").should == [ 0, 0, 0, 5, 102, 195, 182, 195, 182 ].pack("C*")
+    end
+
+    it "decodes to an empty string" do
+      Nexop::Message::IO.string(:decode, [1, 0, 0, 0, 0].pack("C*"), 1).should == [ "", 4 ]
+    end
+
+    it "decodes to an binary string" do
+      Nexop::Message::IO.string(:decode, [1, 0, 0, 0, 3, 1, 2, 3].pack("C*"), 1).should == [ [1, 2, 3].pack("C*"), 7 ]
+    end
+
+    it "decodes to an US-ASCII string" do
+      Nexop::Message::IO.string(:decode, [1, 0, 0, 0, 3, 102, 111, 111].pack("C*"), 1).should == [ "foo", 7 ]
+    end
+
+    it "decodes to an UTF-8 string" do
+      Nexop::Message::IO.string(:decode, [1, 0, 0, 0, 5, 102, 195, 182, 195, 182].pack("C*"), 1).should == [ "föö", 9 ]
+    end
+
+    it "cannot decode if the length-field is incomplete" do
+      expect{ Nexop::Message::IO.string(:decode, [1, 0, 0, 0].pack("C*"), 1) }.to raise_error(ArgumentError)
+    end
+
+    it "cannot decode if the string-field is incomplete" do
+      expect{ Nexop::Message::IO.string(:decode, [1, 0, 0, 0, 3, 1, 2].pack("C*"), 1) }.to raise_error(ArgumentError)
+    end
+  end
 end
