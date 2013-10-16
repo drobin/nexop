@@ -5,7 +5,7 @@ describe Nexop::Message::Base do
     Class.new(Nexop::Message::Base) do
       add_field(:f1, :type => :foo)
       add_field(:f2, :type => :bar, :default => "xxx")
-      add_field(:f3, :type => :dingens)
+      add_field(:f3, :type => :dingens, :const => 4711)
     end
   end
 
@@ -29,6 +29,14 @@ describe Nexop::Message::Base do
       end.to raise_error(RuntimeError)
     end
 
+    it "cannot have a constant field which has a default-value" do
+      expect do
+        Class.new(Nexop::Message::Base) do
+          add_field(:f1, :const => 1, :default => 2)
+        end
+      end.to raise_error(RuntimeError)
+    end
+
     it "has some fields" do
       klass.fields.should == [:f1, :f2, :f3]
     end
@@ -36,6 +44,7 @@ describe Nexop::Message::Base do
     it "has a field" do
       klass.field(:f1).should == { :name => :f1, :type => :foo, :default => nil }
       klass.field("f2").should == { :name => :f2, :type => :bar, :default => "xxx" }
+      klass.field(:f3).should == { :name => :f3, :type => :dingens, :const => 4711 }
     end
   end
 
@@ -58,7 +67,7 @@ describe Nexop::Message::Base do
     end
   end
 
-  context "field_get_get" do
+  context "field_get_set" do
     it "returns the value of an existing field" do
       obj.field_get("f1").should be_nil
       obj.field_get(:f2).should == "xxx"
@@ -76,26 +85,42 @@ describe Nexop::Message::Base do
     it "cannot update the value of an non-existing field" do
       expect{ obj.field_set(:xxx, "xxx") }.to raise_error(ArgumentError)
     end
+
+    it "can update a constant field with the same value" do
+      obj.field_set(:f3, 4711)
+      obj.f3.should == 4711
+    end
+
+    it "cannot update a constant field with another value" do
+      expect{ obj.field_set(:f3, 666) }.to raise_error(ArgumentError)
+    end
   end
 
   context "parse" do
     it "creates a message" do
       Nexop::Message::IO.should_receive(:foo).and_return(["a", 1])
       Nexop::Message::IO.should_receive(:bar).and_return(["b", 1])
-      Nexop::Message::IO.should_receive(:dingens).and_return(["c", 1])
+      Nexop::Message::IO.should_receive(:dingens).and_return([4711, 1])
       obj = klass.parse([1, 2, 3].pack("C*"))
       obj.should be_a_kind_of(klass)
       obj.f1.should == "a"
       obj.f2.should == "b"
-      obj.f3.should == "c"
+      obj.f3.should == 4711
     end
 
     it "should pass the buffer and the offset to the IO-method" do
       data = [1, 2, 3].pack("C*")
       Nexop::Message::IO.should_receive(:foo).with(:decode, data, 0).and_return(["a", 1])
       Nexop::Message::IO.should_receive(:bar).with(:decode, data, 1).and_return(["b", 1])
-      Nexop::Message::IO.should_receive(:dingens).with(:decode, data, 2).and_return(["c", 1])
+      Nexop::Message::IO.should_receive(:dingens).with(:decode, data, 2).and_return([4711, 1])
       klass.parse(data)
+    end
+
+    it "aborts in case of a constant field should be changed" do
+      Nexop::Message::IO.should_receive(:foo).and_return(["a", 1])
+      Nexop::Message::IO.should_receive(:bar).and_return(["b", 1])
+      Nexop::Message::IO.should_receive(:dingens).and_return([666, 1])
+      expect{ klass.parse([1, 2, 3].pack("C*")) }.to raise_error(ArgumentError)
     end
 
     it "aborts in case of a parser-error" do
@@ -122,10 +147,9 @@ describe Nexop::Message::Base do
     it "should pass the correct arguments to the IO-methods" do
       obj.f1 = "a"
       obj.f2 = "b"
-      obj.f3 = "c"
       Nexop::Message::IO.should_receive(:foo).with(:encode, "a").and_return("")
       Nexop::Message::IO.should_receive(:bar).with(:encode, "b").and_return("")
-      Nexop::Message::IO.should_receive(:dingens).with(:encode, "c").and_return("")
+      Nexop::Message::IO.should_receive(:dingens).with(:encode, 4711).and_return("")
       obj.serialize
     end
 

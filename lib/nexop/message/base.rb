@@ -25,11 +25,17 @@ module Nexop::Message
     # When you pass an `:default`-option, then you can specify a default-value
     # which is initial returned.
     #
+    # If the `:const`-option is passed to field-declaration, then you specify a
+    # constant value for the field, which cannot be changed from outside. Only
+    # one of `:default` and `:const` is allowed. You can assign a value of a
+    # constant field, but the new value must equals to the value specified with
+    # the `:const`-option. The `==` operator is used for comparison.
+    #
     # Examples:
     #
     #     class MyMessage < Nexop::Message::Base
-    #       # Defines a field with the name "type" of type "uint8"
-    #       add_field :type, type: :uint8
+    #       # Defines a constant field with the name "type" of type "uint8" with the value `5`
+    #       add_field :type, type: :uint8, const: 5
     #
     #       # Defines a field with the name "length" of type "uint32" and a default-value of 45
     #       add_field :length, type: :uint32, default: 45
@@ -37,9 +43,15 @@ module Nexop::Message
     def self.add_field(name, options = {})
       raise "#{name}: already assigned" if fields.include?(name)
       raise "#{name}: no datatype available" if options[:type].nil?
+      raise "#{name}: cannot have default and const" if options.key?(:default) && options.key?(:const)
 
       @fields ||= []
-      @fields << { :name => name.to_sym, :type => options[:type].to_sym, :default => options[:default] }
+
+      if !options.key?(:const)
+        @fields << { :name => name.to_sym, :type => options[:type].to_sym, :default => options[:default] }
+      else
+        @fields << { :name => name.to_sym, :type => options[:type].to_sym, :const => options[:const] }
+      end
     end
 
     def method_missing(method, *args)
@@ -90,8 +102,12 @@ module Nexop::Message
     # @return The value of the field
     # @raise [ArgumentError] if the field `name` does not exist
     def field_get(name)
-      raise ArgumentError, "no such field: #{name}" unless self.class.fields.include?(name.to_sym)
-      if self.instance_variable_defined?("@_#{name}")
+      meta = self.class.field(name.to_sym)
+      raise ArgumentError, "no such field: #{name}" if meta.nil?
+
+      if meta.key?(:const)
+        meta[:const]
+      elsif self.instance_variable_defined?("@_#{name}")
         self.instance_variable_get("@_#{name}")
       else
         meta = self.class.field("#{name}".to_sym)
@@ -102,12 +118,26 @@ module Nexop::Message
     ##
     # Updates the value of the field with the name `name`.
     #
+    # If you try to update a constant field, then the new `value` is only
+    # accepted, when the already assiged value equals the new `value`, The `==`
+    # operator is used for comparison.
+    #
     # @param name [Symbol] The name of the field
     # @param value The new value
-    # @raise [ArgumentError] if the field `name` does not exist
+    # @raise [ArgumentError]
+    #        - if the field `name` does not exist
+    #        - if you try to change the value of a constant field
     def field_set(name, value)
-      raise ArgumentError, "no such field: #{name}" unless self.class.fields.include?(name.to_sym)
-      self.instance_variable_set("@_#{name}", value)
+      meta = self.class.field(name.to_sym)
+      raise ArgumentError, "no such field: #{name}" if meta.nil?
+
+      if meta.key?(:const)
+        if self.field_get(name) != value
+          raise ArgumentError, "cannot change constant value"
+        end
+      else
+        self.instance_variable_set("@_#{name}", value)
+      end
     end
 
     ##
