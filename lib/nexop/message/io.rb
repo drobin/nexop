@@ -85,6 +85,14 @@ module Nexop::Message
       end
     end
 
+    def self.mpint(op, *args)
+      case op
+      when :encode then encode_mpint(*args)
+      when :decode then decode_mpint(*args)
+      else raise ArgumentError, "unsupported operation: #{op}"
+      end
+    end
+
     private
 
     def self.encode_byte(value)
@@ -157,6 +165,38 @@ module Nexop::Message
 
       list = data.unpack("@#{offset + 4}Z#{length}").first.encode("US-ASCII")
       [ list.split(","), length + 4 ]
+    end
+
+    def self.encode_mpint(value)
+      return [ 0 ].pack("N") if value == 0
+
+      msb_set = value.to_s(2).size  % 8 == 0
+      str = value.to_s(16)
+
+      bytes = if str.size % 2 != 0
+        first = str[0]
+        str[1..-1].scan(/.{2}/).map{ |n| n.to_i(16) }.unshift(first.to_i(16))
+      else
+        str.scan(/.{2}/).map{ |n| n.to_i(16) }
+      end
+
+      bytes.unshift(0) if msb_set
+      bytes.unshift(bytes.size).pack("NC*")
+    end
+
+    def self.decode_mpint(data, offset)
+      length = data.unpack("@#{offset}N").first
+
+      if length.nil? || data.length - offset < length + 4
+        raise ArgumentError, "data too small, length: #{data.size}, offset: #{offset}"
+      end
+
+      num = data.unpack("@#{offset + 4}C#{length}").inject(0) do |a, e|
+        a <<= 8
+        a |= e
+      end
+
+      [ num, length + 4 ]
     end
   end
 end

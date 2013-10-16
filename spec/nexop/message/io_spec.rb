@@ -143,4 +143,40 @@ describe Nexop::Message::IO do
       expect{ Nexop::Message::IO.name_list(:decode, [ 5, 0, 0, 0, 3, 102, 111 ].pack("C*"), 1) }.to raise_error(ArgumentError)
     end
   end
+
+  context "mpint" do
+    include_examples "basic IO examples", :mpint
+
+    it "encodes zero" do
+      Nexop::Message::IO.mpint(:encode, 0).should == [ 0, 0, 0, 0 ].pack("C*")
+    end
+
+    it "encodes 9a378f9b2e332a7" do
+      Nexop::Message::IO.mpint(:encode, "9a378f9b2e332a7".to_i(16)).should == [ 0x00, 0x00, 0x00, 0x08, 0x09, 0xa3, 0x78, 0xf9, 0xb2, 0xe3, 0x32, 0xa7 ].pack("C*")
+    end
+
+    it "encodes 80" do
+      Nexop::Message::IO.mpint(:encode, 0x80).should == [ 0x00, 0x00, 0x00, 0x02, 0x00, 0x80 ].pack("C*")
+    end
+
+    it "decodes to zero" do
+      Nexop::Message::IO.mpint(:decode, [1, 0, 0, 0, 0].pack("C*"), 1).should == [ 0, 4 ]
+    end
+
+    it "decodes to 9a378f9b2e332a7" do
+      Nexop::Message::IO.mpint(:decode, [0x01, 0x00, 0x00, 0x00, 0x08, 0x09, 0xa3, 0x78, 0xf9, 0xb2, 0xe3, 0x32, 0xa7].pack("C*"), 1).should == [ "9a378f9b2e332a7".to_i(16), 12 ]
+    end
+
+    it "decodes to 80" do
+      Nexop::Message::IO.mpint(:decode, [0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x80].pack("C*"), 1).should == [ 0x80, 6 ]
+    end
+
+    it "cannot decode if the length-field is incomplete" do
+      expect{ Nexop::Message::IO.mpint(:decode, [0x01, 0x00, 0x00, 0x00].pack("C*"), 1) }.to raise_error(ArgumentError)
+    end
+
+    it "cannot decode if the number-field is incomplete" do
+      expect{ Nexop::Message::IO.mpint(:decode, [0x01, 0x00, 0x00, 0x00, 0x02, 0x00].pack("C*"), 1) }.to raise_error(ArgumentError)
+    end
+  end
 end
