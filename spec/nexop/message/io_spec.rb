@@ -30,6 +30,42 @@ describe Nexop::Message::IO do
     end
   end
 
+  context "bytes" do
+    include_examples "basic IO examples", :bytes
+
+    it "encodes an empty string" do
+       Nexop::Message::IO.bytes(:encode, "").should == [0, 0, 0, 0].pack("C*")
+    end
+
+    it "encodes a non-empty string" do
+      Nexop::Message::IO.bytes(:encode, "foo").should == [0, 0, 0, 3, 102, 111, 111].pack("C*")
+    end
+
+    it "encodes an empty array" do
+      Nexop::Message::IO.bytes(:encode, []).should == [0, 0, 0, 0].pack("C*")
+    end
+
+    it "encodes a non-empty array" do
+      Nexop::Message::IO.bytes(:encode, [1, 2, 3]).should == [0, 0, 0, 3, 1, 2, 3].pack("C*")
+    end
+
+    it "decodes to an empty string" do
+      Nexop::Message::IO.bytes(:decode, [1, 0, 0, 0, 0].pack("C*"), 1).should == [ "", 4 ]
+    end
+
+    it "decodes to a non-empty string" do
+      Nexop::Message::IO.bytes(:decode, [1, 0, 0, 0, 3, 1, 2, 3].pack("C*"), 1).should == [ [1, 2, 3].pack("C*"), 7 ]
+    end
+
+    it "cannot decode if the length-field is incomplete" do
+      expect{ Nexop::Message::IO.bytes(:decode, [1, 0, 0, 0].pack("C*"), 1) }.to raise_error(ArgumentError)
+    end
+
+    it "cannot decode if the bytes-field is incomplete" do
+      expect{ Nexop::Message::IO.bytes(:decode, [1, 0, 0, 0, 3, 1, 2].pack("C*"), 1) }.to raise_error(ArgumentError)
+    end
+  end
+
   context "byte_16" do
     include_examples "basic IO examples", :byte_16
 

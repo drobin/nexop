@@ -31,21 +31,35 @@ module Nexop::Message
     # constant field, but the new value must equals to the value specified with
     # the `:const`-option. The `==` operator is used for comparison.
     #
+    # Passing a `blk` to the method has the same affect than passing a
+    # `Proc`-instance to the `:const`-option: The field becomes constant and
+    # the block is evaluated everytime the field is {#field_get accessed}.
+    #
     # Examples:
     #
     #     class MyMessage < Nexop::Message::Base
+    #       attr_accessor :num
+    #
     #       # Defines a constant field with the name "type" of type "uint8" with the value `5`
     #       add_field :type, type: :uint8, const: 5
     #
     #       # Defines a field with the name "length" of type "uint32" and a default-value of 45
     #       add_field :length, type: :uint32, default: 45
+    #
+    #       # Defines a constant field, where a block is evaluated
+    #       add_field(:name, type: :string) do |msg|
+    #         msg.num && msg.num.odd? ? "odd number" : "even number"
+    #       end
     #     end
-    def self.add_field(name, options = {})
+    def self.add_field(name, options = {}, &blk)
       raise "#{name}: already assigned" if fields.include?(name)
       raise "#{name}: no datatype available" if options[:type].nil?
       raise "#{name}: cannot have default and const" if options.key?(:default) && options.key?(:const)
 
       @fields ||= []
+
+
+      options[:const] = blk if blk
 
       if !options.key?(:const)
         @fields << { :name => name.to_sym, :type => options[:type].to_sym, :default => options[:default] }
@@ -106,7 +120,7 @@ module Nexop::Message
       raise ArgumentError, "no such field: #{name}" if meta.nil?
 
       if meta.key?(:const)
-        meta[:const]
+        meta[:const].respond_to?(:call) ? meta[:const].call(self) : meta[:const]
       elsif self.instance_variable_defined?("@_#{name}")
         self.instance_variable_get("@_#{name}")
       else

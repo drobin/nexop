@@ -53,6 +53,14 @@ module Nexop::Message
       end
     end
 
+    def self.bytes(op, *args)
+      case op
+      when :encode then encode_bytes(*args)
+      when :decode then decode_bytes(*args)
+      else raise ArgumentError, "unsupported operation: #{op}"
+      end
+    end
+
     def self.byte_16(op, *args)
       case op
       when :encode then encode_byte_16(*args)
@@ -113,6 +121,26 @@ module Nexop::Message
       else
         raise ArgumentError, "buffer-overflow, length = #{data.length}, offset = #{offset}"
       end
+    end
+
+    def self.encode_bytes(value)
+      val = if value.is_a?(String)
+        value.unpack("C*")
+      else
+        value
+      end
+
+      val.unshift(val.size).pack("NC*")
+    end
+
+    def self.decode_bytes(data, offset)
+      length = data.unpack("@#{offset}N").first
+
+      if length.nil? || data.length - offset < length + 4
+        raise ArgumentError, "data too small, buffer-size: #{data.size}, offset: #{offset}, length: #{length}"
+      end
+
+      [ data[offset + 4, length], length + 4 ]
     end
 
     def self.encode_byte_16(value)
