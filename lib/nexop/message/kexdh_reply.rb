@@ -2,7 +2,13 @@ class Nexop::Message::KexdhReply < Nexop::Message::Base
   SSH_MSG_KEXDH_REPLY = 31
 
   add_field(:type, type: :byte, const: SSH_MSG_KEXDH_REPLY)
-  add_field(:k_s, type: :string)
+
+  ##
+  # @!attribute [r] k_s
+  # @return [String] the host key
+  add_field(:k_s, type: :string) do |msg|
+    Nexop::Message::IO.string(:encode, msg.hostkey.to_ssh)
+  end
 
   ##
   # @!attribute [r] f
