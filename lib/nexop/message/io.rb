@@ -45,68 +45,30 @@ module Nexop::Message
   #
   # @see http://tools.ietf.org/html/rfc4251#section-5
   class IO
-    def self.byte(op, *args)
-      case op
-      when :encode then encode_byte(*args)
-      when :decode then decode_byte(*args)
-      else raise ArgumentError, "unsupported operation: #{op}"
-      end
-    end
+    ##
+    # List of available conversions.
+    # All the names defined here can be used as a datatype in {Base.add_field}.
+    CONVERSIONS = [
+      :byte,
+      :bytes,
+      :byte_16,
+      :uint32,
+      :boolean,
+      :name_list,
+      :mpint,
+      :string
+    ]
 
-    def self.bytes(op, *args)
-      case op
-      when :encode then encode_bytes(*args)
-      when :decode then decode_bytes(*args)
-      else raise ArgumentError, "unsupported operation: #{op}"
+    CONVERSIONS.each do |op|
+      self.class_eval <<-EOF
+      def self.#{op}(op, *args)
+        case op
+        when :encode then encode_#{op}(*args)
+        when :decode then decode_#{op}(*args)
+        else raise ArgumentError, "unsupported operation: #{op}"
+        end
       end
-    end
-
-    def self.byte_16(op, *args)
-      case op
-      when :encode then encode_byte_16(*args)
-      when :decode then decode_byte_16(*args)
-      else raise ArgumentError, "unsupported operation: #{op}"
-      end
-    end
-
-    def self.uint32(op, *args)
-      case op
-      when :encode then encode_uint32(*args)
-      when :decode then decode_uint32(*args)
-      else raise ArgumentError, "unsupported operation: #{op}"
-      end
-    end
-
-    def self.boolean(op, *args)
-      case op
-      when :encode then encode_boolean(*args)
-      when :decode then decode_boolean(*args)
-      else raise ArgumentError, "unsupported operation: #{op}"
-      end
-    end
-
-    def self.name_list(op, *args)
-      case op
-      when :encode then encode_name_list(*args)
-      when :decode then decode_name_list(*args)
-      else raise ArgumentError, "unsupported operation: #{op}"
-      end
-    end
-
-    def self.mpint(op, *args)
-      case op
-      when :encode then encode_mpint(*args)
-      when :decode then decode_mpint(*args)
-      else raise ArgumentError, "unsupported operation: #{op}"
-      end
-    end
-
-    def self.string(op, *args)
-      case op
-      when :encode then encode_string(*args)
-      when :decode then decode_string(*args)
-      else raise ArgumentError, "unsupported operation: #{op}"
-      end
+      EOF
     end
 
     private
