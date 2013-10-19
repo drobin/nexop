@@ -88,4 +88,35 @@ describe Nexop::Message::KexdhReply do
       expect{ msg.f }.to raise_error(ArgumentError)
     end
   end
+
+  context "e" do
+    it "is readable" do
+      msg.e.should be_nil
+    end
+
+    it "is updatable" do
+      msg.e = 2
+      msg.e.should == 2
+    end
+  end
+
+  context "K" do
+    it "computes the shared secret" do
+      msg.kex_algorithm = "diffie-hellman-group1-sha1"
+      msg.e = 4711
+      msg.K.should be_a(Bignum)
+    end
+
+    it "aborts when you don't have dh and e" do
+      expect{ msg.K }.to raise_error(ArgumentError)
+    end
+  end
+
+  context "shared_secret" do
+    it "is an alias for K" do
+      msg.kex_algorithm = "diffie-hellman-group1-sha1"
+      msg.e = 4711
+      msg.shared_secret.should be_a(Bignum)
+    end
+  end
 end
