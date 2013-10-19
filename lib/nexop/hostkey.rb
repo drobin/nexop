@@ -31,6 +31,30 @@ module Nexop
       hk = Hostkey.new(pub_path || "#{priv_path}.pub", priv_path)
     end
 
+    ##
+    # Returns the public key of the keypair.
+    #
+    # The key is read on-demand, the first time the method is called. Then
+    # the key is cached over the lifetime of the object.
+    #
+    # @return [OpenSSL::PKey::RSA] The public key
+    # @raise Errno::ENOENT if {#pub_path} does not exist
+    def pub
+      @pubkey ||= OpenSSL::PKey::RSA.new(File.read(@pub_path))
+    end
+
+    ##
+    # Returns the private key of the keypair.
+    #
+    # The key is read on-demand, the first time the method is called. Then
+    # the key is cached over the lifetime of the object.
+    #
+    # @return [OpenSSL::PKey::RSA] The private key
+    # @raise Errno::ENOENT if {#priv_path} does not exist
+    def priv
+      @privkey ||= OpenSSL::PKey::RSA.new(File.read(@priv_path))
+    end
+
     private
 
     def initialize(pub_path, priv_path)
