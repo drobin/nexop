@@ -55,6 +55,18 @@ module Nexop
       @privkey ||= OpenSSL::PKey::RSA.new(File.read(@priv_path))
     end
 
+    ##
+    # Returns a string-representation of the {#pub public key} which can
+    # be used by the SSH-protocol.
+    #
+    # @return [String] The encoded representation of the key
+    # @see http://tools.ietf.org/html/rfc4253#section-6.6
+    def to_ssh
+      Nexop::Message::IO.string(:encode, "ssh-rsa") +
+      Nexop::Message::IO.mpint(:encode, pub.params["e"]) +
+      Nexop::Message::IO.mpint(:encode, pub.params["n"])
+    end
+
     private
 
     def initialize(pub_path, priv_path)

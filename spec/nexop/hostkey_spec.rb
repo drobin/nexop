@@ -69,4 +69,10 @@ describe Nexop::Hostkey do
       expect{ Nexop::Hostkey.from_file("xxx").priv }.to raise_error(Errno::ENOENT)
     end
   end
+
+  context "to_ssh" do
+    it "encodes the public key" do
+      hostkey.to_ssh.should be_a(String)
+    end
+  end
 end
