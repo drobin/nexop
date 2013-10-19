@@ -11,10 +11,6 @@ describe Nexop::Message::KexdhReply do
     msg.k_s.should be_nil
   end
 
-  it "has a f field" do
-    msg.f.should be_nil
-  end
-
   it "has a sig_h field" do
     msg.sig_h.should be_nil
   end
@@ -79,6 +75,17 @@ describe Nexop::Message::KexdhReply do
 
     it "aborts when you don't have a p and g" do
       expect{ msg.dh }.to raise_error(ArgumentError)
+    end
+  end
+
+  context "f" do
+    it "is readable" do
+      msg.kex_algorithm = "diffie-hellman-group1-sha1"
+      msg.f.should be_a(Bignum)
+    end
+
+    it "aborts when you don't have p and g" do
+      expect{ msg.f }.to raise_error(ArgumentError)
     end
   end
 end

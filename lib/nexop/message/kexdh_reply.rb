@@ -3,7 +3,11 @@ class Nexop::Message::KexdhReply < Nexop::Message::Base
 
   add_field(:type, type: :byte, const: SSH_MSG_KEXDH_REPLY)
   add_field(:k_s, type: :string)
-  add_field(:f, type: :string)
+
+  ##
+  # The exchange value sent by the server
+  add_field(:f, type: :string) { |msg| msg.dh.pub_key.to_i }
+
   add_field(:sig_h, type: :string)
 
   attr_accessor :kex_algorithm
@@ -29,6 +33,7 @@ class Nexop::Message::KexdhReply < Nexop::Message::Base
       @dh = OpenSSL::PKey::DH.new
       @dh.p = p
       @dh.g = g
+      @dh.generate_key!
     end
 
     @dh
