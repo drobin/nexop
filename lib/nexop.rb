@@ -1,5 +1,6 @@
 require "nexop/version"
 require "nexop/hostkey"
+require "nexop/prime"
 require "nexop/packet"
 require "nexop/message/base"
 require "nexop/message/kex_init"
