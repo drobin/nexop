@@ -21,4 +21,16 @@ class Nexop::Message::KexdhReply < Nexop::Message::Base
     @p = Nexop::Prime.to_i(p)
     @g = g
   end
+
+  def dh
+    unless @dh
+      raise ArgumentError, "p and g can't be nil" if p.nil? || g.nil?
+
+      @dh = OpenSSL::PKey::DH.new
+      @dh.p = p
+      @dh.g = g
+    end
+
+    @dh
+  end
 end

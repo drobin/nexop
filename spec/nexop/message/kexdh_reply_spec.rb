@@ -70,4 +70,15 @@ describe Nexop::Message::KexdhReply do
       msg.g.should == 2
     end
   end
+
+  context "dh" do
+    it "creates an OpenSSL::PKey::DH instance" do
+      msg.kex_algorithm = "diffie-hellman-group1-sha1"
+      msg.dh.should be_a(OpenSSL::PKey::DH)
+    end
+
+    it "aborts when you don't have a p and g" do
+      expect{ msg.dh }.to raise_error(ArgumentError)
+    end
+  end
 end
