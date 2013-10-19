@@ -19,6 +19,12 @@ class Nexop::Message::KexdhReply < Nexop::Message::Base
   attr_accessor :kex_algorithm
 
   ##
+  # The hostkey.
+  #
+  # @return [Hostkey] The hostkey used by the connection.
+  attr_accessor :hostkey
+
+  ##
   # The prime used by the diffie hellman algorithm.
   # Depends on the {#kex_algorithm}.
   # @return [Integer]
@@ -77,4 +83,36 @@ class Nexop::Message::KexdhReply < Nexop::Message::Base
 
     @dh
   end
+
+  ##
+  # Calculates and returns the exchange hash for the connection.
+  #
+  # Once calculated, the exchange hash is cached in the object
+  #
+  # @param v_c [String] the client's identification string (CR and LF excluded)
+  # @param v_s [String] the server's identification string (CR and LF excluded)
+  # @param i_c [String] the payload of the client's SSH_MSG_KEXINIT
+  # @param i_s [String] the payload of the server's SSH_MSG_KEXINIT
+  # @return [String] the exchange hash
+  # @raise [ArgumentError] if {#e} or {#dh} are `nil`
+  def H(v_c, v_s, i_c, i_s)
+    unless @h
+      raise ArgumentError, "e and hostkey can't be nil" if e.nil? || hostkey.nil?
+
+      data = Nexop::Message::IO.string(:encode, v_c) +
+             Nexop::Message::IO.string(:encode, v_s) +
+             Nexop::Message::IO.string(:encode, i_c) +
+             Nexop::Message::IO.string(:encode, i_s) +
+             Nexop::Message::IO.string(:encode, hostkey.to_ssh) +
+             Nexop::Message::IO.mpint(:encode, e) +
+             Nexop::Message::IO.mpint(:encode, f) +
+             Nexop::Message::IO.mpint(:encode, self.K)
+      sha1 = OpenSSL::Digest::SHA1.new
+      @h = sha1.digest(data)
+    end
+
+    @h
+  end
+
+  alias_method :exchange_hash, :H
 end

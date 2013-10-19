@@ -119,4 +119,30 @@ describe Nexop::Message::KexdhReply do
       msg.shared_secret.should be_a(Bignum)
     end
   end
+
+  context "H" do
+    let(:hostkey) { double(:to_ssh => "xxx") }
+
+    it "calculates the exchange hash" do
+      msg.kex_algorithm = "diffie-hellman-group1-sha1"
+      msg.e = 4711
+      msg.hostkey = hostkey
+      msg.H("v_c", "v_s", "i_c", "i_s").should have(20).elements
+    end
+
+    it "aborts when you don't have dh, e and hostkey" do
+      expect{ msg.H }.to raise_error(ArgumentError)
+    end
+  end
+
+  context "exchange_hash" do
+    let(:hostkey) { double(:to_ssh => "xxx") }
+
+    it "is an alias for H" do
+      msg.kex_algorithm = "diffie-hellman-group1-sha1"
+      msg.e = 4711
+      msg.hostkey = hostkey
+      msg.exchange_hash("v_c", "v_s", "i_c", "i_s").should have(20).elements
+    end
+  end
 end
