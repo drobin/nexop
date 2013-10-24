@@ -11,7 +11,7 @@ class Nexop::Message::KexdhReply < Nexop::Message::Base
   ##
   # @!attribute [r] f
   # @return [Integer] the exchange value sent by the server
-  add_field(:f, type: :string) { |msg| msg.dh.pub_key.to_i }
+  add_field(:f, type: :mpint) { |msg| msg.dh.pub_key.to_i }
 
   add_field(:sig_h, type: :string)
 
