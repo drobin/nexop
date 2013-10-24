@@ -121,18 +121,26 @@ describe Nexop::Message::KexdhReply do
     end
   end
 
-  context "H" do
+  context "calc_H" do
     let(:hostkey) { double(:to_ssh => "xxx") }
 
     it "calculates the exchange hash" do
       msg.kex_algorithm = "diffie-hellman-group1-sha1"
       msg.e = 4711
       msg.hostkey = hostkey
-      msg.H("v_c", "v_s", "i_c", "i_s").should have(20).elements
+      h = msg.calc_H("v_c", "v_s", "i_c", "i_s")
+      h.should have(20).elements
+      msg.H.should equal(h)
     end
 
     it "aborts when you don't have dh, e and hostkey" do
-      expect{ msg.H }.to raise_error(ArgumentError)
+      expect{ msg.calc_H }.to raise_error(ArgumentError)
+    end
+  end
+
+  context "H" do
+    it "is nil by default" do
+      msg.H.should be_nil
     end
   end
 
@@ -143,7 +151,8 @@ describe Nexop::Message::KexdhReply do
       msg.kex_algorithm = "diffie-hellman-group1-sha1"
       msg.e = 4711
       msg.hostkey = hostkey
-      msg.exchange_hash("v_c", "v_s", "i_c", "i_s").should have(20).elements
+      h = msg.calc_H("v_c", "v_s", "i_c", "i_s")
+      msg.exchange_hash.should equal(h)
     end
   end
 end

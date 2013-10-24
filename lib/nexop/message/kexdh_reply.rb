@@ -89,9 +89,17 @@ class Nexop::Message::KexdhReply < Nexop::Message::Base
   end
 
   ##
-  # Calculates and returns the exchange hash for the connection.
+  # Returns the exchange-hash for the connection.
   #
-  # Once calculated, the exchange hash is cached in the object
+  # The exchange-hash is calculated with the {#calc_H}-method.
+  # @return [String] the exchange hash. If the exchange hash is not calculated,
+  #         `nil` is returned.
+  def H
+    @h
+  end
+
+  ##
+  # Calculates the exchange hash for the connection.
   #
   # @param v_c [String] the client's identification string (CR and LF excluded)
   # @param v_s [String] the server's identification string (CR and LF excluded)
@@ -99,7 +107,7 @@ class Nexop::Message::KexdhReply < Nexop::Message::Base
   # @param i_s [String] the payload of the server's SSH_MSG_KEXINIT
   # @return [String] the exchange hash
   # @raise [ArgumentError] if {#e} or {#dh} are `nil`
-  def H(v_c, v_s, i_c, i_s)
+  def calc_H(v_c, v_s, i_c, i_s)
     unless @h
       raise ArgumentError, "e and hostkey can't be nil" if e.nil? || hostkey.nil?
 
