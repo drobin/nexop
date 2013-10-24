@@ -6,9 +6,7 @@ class Nexop::Message::KexdhReply < Nexop::Message::Base
   ##
   # @!attribute [r] k_s
   # @return [String] the host key
-  add_field(:k_s, type: :string) do |msg|
-    Nexop::Message::IO.string(:encode, msg.hostkey.to_ssh)
-  end
+  add_field(:k_s, type: :string) { |msg| msg.hostkey.to_ssh }
 
   ##
   # @!attribute [r] f

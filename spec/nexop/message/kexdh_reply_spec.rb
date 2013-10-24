@@ -9,7 +9,7 @@ describe Nexop::Message::KexdhReply do
 
   it "has a k_s field" do
     msg.hostkey = double(:to_ssh => "xxx")
-    msg.k_s.unpack("NA*").should == [3, "xxx"]
+    msg.k_s.unpack("A*").should == ["xxx"]
   end
 
   it "has a sig_h field" do
