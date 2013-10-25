@@ -15,6 +15,8 @@ module Nexop
   #
   # Assign a {#hostkey} to the session before starting to {#tick} the session!
   class Session
+    include Kex
+
     ##
     # The input-buffer.
     #
@@ -158,7 +160,16 @@ module Nexop
     ##
     # A single tick consuming the given `payload`.
     def tick_payload(payload)
-      true
+      @phase ||= :kex
+
+      case @phase
+      when :kex
+        @phase = :finished unless tick_kex(payload)
+      else
+        raise "Invalid state: #{@state}"
+      end
+
+      @phase != :finished
     end
   end
 end

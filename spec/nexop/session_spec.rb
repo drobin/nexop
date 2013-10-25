@@ -56,4 +56,26 @@ describe Nexop::Session do
       session.hostkey.should == 1
     end
   end
+
+  context "kex phase" do
+    before(:each) { session.instance_variable_set(:@server_identification, "foo") }
+    before(:each) { session.instance_variable_set(:@client_identification, "bar") }
+    before(:each) { session.instance_variable_set(:@phase, :kex) }
+
+    it "should stay in the kex-phase when the kex-handler returns true" do
+      Nexop::Packet.should_receive(:parse).and_return("xxx", nil)
+      session.should_receive(:tick_kex).with("xxx").and_return(true)
+
+      session.tick.should be_true
+      session.instance_variable_get(:@phase).should == :kex
+    end
+
+    it "switches to the finished-phase when the kex-handler returns false" do
+      Nexop::Packet.should_receive(:parse).and_return("xxx")
+      session.should_receive(:tick_kex).with("xxx").and_return(false)
+
+      session.tick.should be_false
+      session.instance_variable_get(:@phase).should == :finished
+    end
+  end
 end
