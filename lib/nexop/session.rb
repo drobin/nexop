@@ -16,6 +16,7 @@ module Nexop
   # Assign a {#hostkey} to the session before starting to {#tick} the session!
   class Session
     include Kex
+    include Log
 
     ##
     # The input-buffer.
@@ -85,6 +86,7 @@ module Nexop
       unless @server_identification
         @server_identification = "SSH-2.0-nexop_#{Nexop::VERSION}"
         obuf_write("#{@server_identification}\r\n")
+        log.debug "server identification: #{server_identification}"
         return true
       end
 
@@ -92,6 +94,7 @@ module Nexop
         @client_identification = @ibuf.slice!(/.*\r\n/)
         @client_identification.chomp! if @client_identification
         return true if @client_identification.nil? # incomplete
+        log.debug "client identification: #{client_identification}"
       end
 
       # parse as many packets as available in the input-buffer
@@ -161,6 +164,7 @@ module Nexop
     # A single tick consuming the given `payload`.
     def tick_payload(payload)
       @phase ||= :kex
+      log.debug("current phase: #{@phase}")
 
       case @phase
       when :kex

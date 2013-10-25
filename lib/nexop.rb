@@ -1,4 +1,5 @@
 require "nexop/version"
+require "nexop/log"
 require "nexop/hostkey"
 require "nexop/prime"
 require "nexop/packet"

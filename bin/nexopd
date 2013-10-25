@@ -25,10 +25,11 @@ opts.each do |opt, arg|
   end
 end
 
-class BlockingSession < Nexop::Session
+class Nexop::Session
   def run(client)
     on_obuf do |obuf|
       client.write(obuf)
+      log.debug "#{obuf.size} bytes written to client"
       obuf.clear
     end
 
@@ -36,8 +37,8 @@ class BlockingSession < Nexop::Session
 
     loop do
       rs, = IO.select([client])
-      @ibuf += rs.first.read_nonblock(128)
-      puts "selected, #{@ibuf.size} bytes available for reading"
+      @ibuf += rs.first.read_nonblock(512)
+      log.debug "#{@ibuf.size} bytes available for reading"
 
       tick
     end
@@ -48,8 +49,7 @@ server = TCPServer.new(4711)
 
 loop do
   client = server.accept
-  puts "accepted"
-  session = BlockingSession.new
+  session = Nexop::Session.new
   session.hostkey = Nexop::Hostkey.from_file(identity_file)
   session.run(client)
 end
