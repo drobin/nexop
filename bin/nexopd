@@ -1,0 +1,55 @@
+#!/usr/bin/env ruby
+
+require 'nexop'
+require 'socket'
+require 'getoptlong'
+
+opts = GetoptLong.new(
+  [ '--generate', '-g', GetoptLong::OPTIONAL_ARGUMENT ],
+  [ '--identity', '-i', GetoptLong::REQUIRED_ARGUMENT ]
+)
+
+identity_file = "mykey"
+
+opts.each do |opt, arg|
+  case opt
+  when '--generate'
+    hostkey = Nexop::Hostkey.generate(1024)
+    priv_path = arg.empty? ? "mykey" : arg
+    pub_path = "#{priv_path}.pub"
+    File.open(priv_path, "w") { |f| f.write(hostkey.priv.to_pem) }
+    File.open(pub_path, "w") { |f| f.write(hostkey.pub.to_pem) }
+    exit(0)
+  when '--identity'
+    identity_file = arg.clone
+  end
+end
+
+class BlockingSession < Nexop::Session
+  def run(client)
+    on_obuf do |obuf|
+      client.write(obuf)
+      obuf.clear
+    end
+
+    tick
+
+    loop do
+      rs, = IO.select([client])
+      @ibuf += rs.first.read_nonblock(128)
+      puts "selected, #{@ibuf.size} bytes available for reading"
+
+      tick
+    end
+  end
+end
+
+server = TCPServer.new(4711)
+
+loop do
+  client = server.accept
+  puts "accepted"
+  session = BlockingSession.new
+  session.hostkey = Nexop::Hostkey.from_file(identity_file)
+  session.run(client)
+end
