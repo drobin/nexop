@@ -1,6 +1,9 @@
 class Nexop::Message::KexdhReply < Nexop::Message::Base
   SSH_MSG_KEXDH_REPLY = 31
 
+  ##
+  # @!attribute [r] type
+  # @return [Integer] Message type set to {SSH_MSG_KEXDH_REPLY}
   add_field(:type, type: :byte, const: SSH_MSG_KEXDH_REPLY)
 
   ##
@@ -13,7 +16,16 @@ class Nexop::Message::KexdhReply < Nexop::Message::Base
   # @return [Integer] the exchange value sent by the server
   add_field(:f, type: :mpint) { |msg| msg.dh.pub_key.to_i }
 
-  add_field(:sig_h, type: :string)
+  ##
+  # @!attribute [r] sig_h
+  # @return [String] Signature over {#H}
+  add_field(:sig_h, type: :string) do |msg|
+    raise ArgumentError, "sig_h: H cannot be nil" if msg.H.nil?
+    @signature ||= msg.hostkey.priv.sign(OpenSSL::Digest::SHA1.new, msg.H)
+
+    Nexop::Message::IO.string(:encode, "ssh-rsa") +
+    Nexop::Message::IO.string(:encode, @signature)
+  end
 
   ##
   # The key exchange algorithm.

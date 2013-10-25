@@ -2,6 +2,7 @@ require 'spec_helper'
 
 describe Nexop::Message::KexdhReply do
   let(:msg) { Nexop::Message::KexdhReply.new }
+  let(:hostkey) { double(:priv => Object.new, :pub => Object.new, :to_ssh => "xxx") }
 
   it "has a type-field" do
     msg.type.should == Nexop::Message::KexdhReply::SSH_MSG_KEXDH_REPLY
@@ -10,10 +11,6 @@ describe Nexop::Message::KexdhReply do
   it "has a k_s field" do
     msg.hostkey = double(:to_ssh => "xxx")
     msg.k_s.unpack("A*").should == ["xxx"]
-  end
-
-  it "has a sig_h field" do
-    msg.sig_h.should be_nil
   end
 
   context "kex_algorithm" do
@@ -145,14 +142,27 @@ describe Nexop::Message::KexdhReply do
   end
 
   context "exchange_hash" do
-    let(:hostkey) { double(:to_ssh => "xxx") }
-
     it "is an alias for H" do
       msg.kex_algorithm = "diffie-hellman-group1-sha1"
       msg.e = 4711
       msg.hostkey = hostkey
       h = msg.calc_H("v_c", "v_s", "i_c", "i_s")
       msg.exchange_hash.should equal(h)
+    end
+  end
+
+  context "sig_h" do
+    it "calculates the hash over H" do
+      msg.hostkey = hostkey
+      msg.stub(:H).and_return("abc")
+      msg.hostkey.priv.should_receive(:sign).and_return("xxx")
+      msg.sig_h.unpack("C4A7C4C*").should == [0, 0, 0, 7, 'ssh-rsa', 0, 0, 0, 3, 120, 120, 120]
+    end
+
+    it "aborts if H is not calculated" do
+      msg.hostkey = hostkey
+      msg.stub(:H).and_return(nil)
+      expect{ msg.sig_h }.to raise_error(ArgumentError)
     end
   end
 end
