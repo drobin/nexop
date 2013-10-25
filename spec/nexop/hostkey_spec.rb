@@ -75,4 +75,18 @@ describe Nexop::Hostkey do
       hostkey.to_ssh.should be_a(String)
     end
   end
+
+  context "generate" do
+    it "does not have any path-components" do
+      hk = Nexop::Hostkey.generate(1024)
+      hk.pub_path.should be_nil
+      hk.priv_path.should be_nil
+    end
+
+    it "does have a public and a private component" do
+      hk = Nexop::Hostkey.generate(1024)
+      hk.pub.should be_a_kind_of(OpenSSL::PKey::RSA)
+      hk.priv.should be_a_kind_of(OpenSSL::PKey::RSA)
+    end
+  end
 end

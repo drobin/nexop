@@ -15,6 +15,21 @@ module Nexop
     attr_reader :priv_path
 
     ##
+    # Generates a new hostkey-pair with the given length.
+    #
+    # @param nbits [Integer] Size of the key in bits
+    # @return [Hostkey] A new hostkey
+    def self.generate(nbits)
+      hostkey = Hostkey.new(nil, nil)
+
+      key = OpenSSL::PKey::RSA.generate(nbits)
+      hostkey.instance_variable_set(:@privkey, key)
+      hostkey.instance_variable_set(:@pubkey, key.public_key)
+
+      hostkey
+    end
+
+    ##
     # Reads an hostkey from a pair of file.
     #
     # The private key is stored in the file `priv_path`. By default, the
