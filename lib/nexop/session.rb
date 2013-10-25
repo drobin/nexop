@@ -81,10 +81,16 @@ module Nexop
       unless @client_identification
         @client_identification = @ibuf.slice!(/.*\r\n/)
         @client_identification.chomp! if @client_identification
-        return true if @client_identification.nil?
+        return true if @client_identification.nil? # incomplete
       end
 
-      true
+      # parse as many packets as available in the input-buffer
+      while payload = Nexop::Packet.parse(@ibuf)
+        # tick per packet-payload: quit the session when tick_payload request it
+        return false unless tick_payload(payload)
+      end
+
+      true # leave the session open
     end
 
     ##
@@ -106,6 +112,45 @@ module Nexop
       @obuf += data
       @on_obuf.call(@obuf) if @on_obuf && @on_obuf.respond_to?(:call)
       self
+    end
+
+    ##
+    # Assigns a {Packet} to {#obuf}.
+    #
+    # From the given `payload` a SSH-packet is created and
+    # {#obuf_write assigned} to {#obuf}.
+    #
+    # @param payload [String] The payload of a packet to send to the client.
+    #
+    # @return [Session]
+    # @see #obuf_write
+    def packet_write(payload)
+      data = Packet.create(payload)
+      obuf_write(data)
+    end
+
+    ##
+    # Assigns the given {Message::Base message} to {#obuf}.
+    #
+    # The given `message` is {Message::Base#serialize serialized} and encoded
+    # into a {Packet}. The resulting data are assigned to {#obuf}.
+    #
+    # @param message [Message::Base] A message which should be serialized and
+    #        send to the client.
+    # @return [Session]
+    # @see #obuf_write
+    # @see #packet_write
+    def message_write(message)
+      serialized = message.serialize
+      packet_write(serialized)
+    end
+
+    private
+
+    ##
+    # A single tick consuming the given `payload`.
+    def tick_payload(payload)
+      true
     end
   end
 end
