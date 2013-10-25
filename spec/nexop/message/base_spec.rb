@@ -176,4 +176,24 @@ describe Nexop::Message::Base do
       expect{ obj.serialize }.to raise_error(TypeError)
     end
   end
+
+  context "==" do
+    it "fails if the classes are different" do
+      obj.should_not == Object.new
+    end
+
+    it "fails if the value of a field are different" do
+      other = obj.clone
+      other.f1 = "xxx"
+      obj.should_not == other
+    end
+
+    it "succeeds if the values of all fields are the same" do
+      obj.should == obj.clone
+    end
+
+    it "succeeds if the other object refers to the same object" do
+      obj.should == obj
+    end
+  end
 end

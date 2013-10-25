@@ -192,5 +192,23 @@ module Nexop::Message
         a += Nexop::Message::IO.send(meta[:type], :encode, self.field_get(e))
       end
     end
+
+    ##
+    # Compares a message with another one.
+    #
+    # Two messages are equal, when
+    #
+    # 1. They refer to the same class (aka have the same metamodel).
+    # 2. All fields have the same values (where the `==` operator is used for
+    #    comparison)
+    #
+    # @param other [Object] The object to compare with
+    # @return [Boolean] If the two objects refers to the same message, then
+    #         `true` is returned, `false` otherwise.
+    def == (other)
+      return true if self.equal?(other)
+      return false if self.class != other.class
+      self.class.fields.all? { |f| self.field_get(f) == other.field_get(f) }
+    end
   end
 end
