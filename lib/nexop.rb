@@ -7,6 +7,7 @@ require "nexop/message/kex_init"
 require "nexop/message/kexdh_init"
 require "nexop/message/kexdh_reply"
 require "nexop/kex"
+require "nexop/session"
 
 module Nexop
   # Your code goes here...
