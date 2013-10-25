@@ -17,4 +17,8 @@ RSpec.configure do |config|
   # the seed, which is printed after each run.
   #     --seed 1234
   config.order = 'random'
+
+  config.before(:suite) do
+    Log4r::Logger.root.level = Log4r::OFF
+  end
 end
