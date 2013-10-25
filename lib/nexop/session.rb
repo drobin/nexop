@@ -8,6 +8,10 @@ module Nexop
   #   (possible) encrypted data into the {#ibuf}-buffer.
   # - {#obuf}: The session puts data into the buffer, which needs to be send
   #   back to the client.
+  #
+  # The data from {#ibuf}/{#obuf} are consumed/filled with the invocation of
+  # the {#tick}-method. You should leave the session open until {#tick}
+  # returns `false`.
   class Session
     ##
     # The input-buffer.
@@ -28,10 +32,80 @@ module Nexop
     attr_accessor :obuf
 
     ##
+    # The identification string of the server.
+    #
+    # Assigned, when the string is send to the client.
+    #
+    # @return [String]
+    attr_reader :server_identification
+
+    ##
+    # The identification string of the client.
+    #
+    # Assigned, when the identification-string was received from the client.
+    #
+    # @return [String]
+    attr_reader :client_identification
+
+    ##
     # Creates a new session.
     def initialize
       @ibuf = ""
       @obuf = ""
+    end
+
+    ##
+    # Handles and incoming and outgoing data for the session.
+    #
+    # The protocol handshake, any encryption/decryption is handled correctly
+    # by the method. You should call the method, whenever new data are
+    # available in the {#ibuf}. The method tries to consume as much data as
+    # possible. Depending the the current protocol state you need to send
+    # back some data to the client. So, the method can assign some data to
+    # the {#obuf}. Any listener registered with {#on_obuf} is informed.
+    #
+    # The return value of the method states how to handle the session in the
+    # future. When `true` is returned, then you should leave the session open
+    # for at least one more {#tick}-invocation. When `false` is returned, you
+    # can destroy the session, and the underlaying socket.
+    #
+    # @return [Boolean] When `true` is return, you should leave the session
+    #         open. A `false` value means, that the session can be closed.
+    def tick
+      unless @server_identification
+        @server_identification = "SSH-2.0-nexop_#{Nexop::VERSION}"
+        obuf_write("#{@server_identification}\r\n")
+        return true
+      end
+
+      unless @client_identification
+        @client_identification = @ibuf.slice!(/.*\r\n/)
+        @client_identification.chomp! if @client_identification
+        return true if @client_identification.nil?
+      end
+
+      true
+    end
+
+    ##
+    # Assign a callback, which in invoked when data are appended to {#obuf}.
+    #
+    # @param blk [Proc] The `Proc`-instance to invoke
+    # @return [Session]
+    def on_obuf(&blk)
+      @on_obuf = blk
+      self
+    end
+
+    protected
+
+    ##
+    # Assigns data to {#obuf} and informs the {#on_obuf listener}.
+    # @return [Session]
+    def obuf_write(data)
+      @obuf += data
+      @on_obuf.call(@obuf) if @on_obuf && @on_obuf.respond_to?(:call)
+      self
     end
   end
 end
