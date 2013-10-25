@@ -1,7 +1,15 @@
 require 'spec_helper'
 
 describe Nexop::Kex do
-  let(:klass) { Class.new { |c| c.send :include, Nexop::Kex } }
+  let(:klass) do
+    Class.new do |c|
+      c.send :include, Nexop::Kex
+      c.send :attr_accessor, :hostkey
+      c.send :attr_accessor, :client_identification
+      c.send :attr_accessor, :server_identification
+    end
+  end
+
   let(:kex) { klass.new }
 
   context "kex_init" do
@@ -38,6 +46,44 @@ describe Nexop::Kex do
       msg = Nexop::Message::KexInit.new
       kex.receive_kex_init(msg)
       kex.kex_init(:c2s).should equal(msg)
+    end
+  end
+
+  context "tick_kex" do
+    context "step 1" do
+      it "fails if you don't receive a SSH_MSG_KEXINIT" do
+        expect{ kex.tick_kex("xxx") }.to raise_error(ArgumentError)
+        kex.kex_init(:c2s).should be_nil
+      end
+
+      it "receives and sends back a SSH_MSG_KEXINIT" do
+        c2s = Nexop::Message::KexInit.new
+        kex.should_receive(:message_write).with(kex.kex_init(:s2c))
+        kex.tick_kex(c2s.serialize).should be_true
+        kex.kex_init(:c2s).should == c2s
+      end
+    end
+
+    context "step 2" do
+      before(:each) { kex.instance_variable_set(:@kex_step, 2) }
+      before(:each) { kex.hostkey = Nexop::Hostkey.generate(1024) }
+      before(:each) { kex.receive_kex_init(Nexop::Message::KexInit.new) }
+      before(:each) { kex.client_identification = "V_C" }
+      before(:each) { kex.server_identification = "V_S" }
+
+      it "fails of you don't receive a SSH_MSG_KEXDH_INIT" do
+        expect{ kex.tick_kex("xxx") }.to raise_error(ArgumentError)
+      end
+
+      it "receives SSH_MSG_KEXDH_INIT and send back SSH_MSG_KEXDH_REPLY" do
+        request = Nexop::Message::KexdhInit.new
+        request.e = 4711
+        kex.should_receive(:message_write) do |msg|
+          msg.should be_a_kind_of(Nexop::Message::KexdhReply)
+        end
+
+        kex.tick_kex(request.serialize).should be_true
+      end
     end
   end
 end

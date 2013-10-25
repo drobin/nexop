@@ -35,6 +35,54 @@ module Nexop
       @kex_init_c2s = msg
     end
 
+    ##
+    # Session-tick implementation for the key-exchange.
+    #
+    # The method should be called by the session as long as `true` is
+    # returned.
+    #
+    # @param payload [String] A binary string contains the payload of a
+    #        packet.
+    # @return [Boolean] As long as `true` is returned, the key exchange is
+    #         still active and the method should be called again. If `false`
+    #         is returned, then the key exchange is complete and you can
+    #         switch to the next session-state.
+    def tick_kex(payload)
+      @kex_step ||= 1
+
+      case @kex_step
+      when 1
+        # step 1: receive SSH_MSG_KEXINIT from the client and send back the own one
+        c2s = Message::KexInit.parse(payload)
+        s2c = kex_init(:s2c)
+
+        receive_kex_init(c2s)
+        message_write(s2c)
+
+        @kex_step = @kex_step + 1
+
+        true # continue with key exchange
+      when 2
+        # step 2: receive SSH_MSG_KEXDH_INIT and send back SSH_MSG_KEXDH_REPLY
+        dh_init = Message::KexdhInit.parse(payload)
+
+        dh_reply = Message::KexdhReply.new
+        dh_reply.hostkey = self.hostkey
+        dh_reply.kex_algorithm = "diffie-hellman-group14-sha1"
+        dh_reply.e = dh_init.e
+        dh_reply.calc_H(self.client_identification, self.server_identification, kex_init(:c2s).serialize, kex_init(:s2c).serialize)
+
+        message_write(dh_reply)
+
+        @kex_step = @kex_step + 1
+
+        true # continue with the key exchange
+      else
+        # nothing else to do, quit key exchange
+        false
+      end
+    end
+
     private
 
     def build_kex_init_s2c
