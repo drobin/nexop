@@ -43,6 +43,12 @@ module Nexop
     attr_accessor :hostkey
 
     ##
+    # The keystore of the session.
+    #
+    # @return [Keystore]
+    attr_reader :keystore
+
+    ##
     # The identification string of the server.
     #
     # Assigned, when the string is send to the client.
@@ -63,6 +69,7 @@ module Nexop
     def initialize
       @ibuf = ""
       @obuf = ""
+      @keystore = Keystore.new
     end
 
     ##

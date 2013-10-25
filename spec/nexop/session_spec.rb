@@ -57,6 +57,12 @@ describe Nexop::Session do
     end
   end
 
+  context "keystore" do
+    it "is assigned by default" do
+      session.keystore.should be_a_kind_of(Nexop::Keystore)
+    end
+  end
+
   context "kex phase" do
     before(:each) { session.instance_variable_set(:@server_identification, "foo") }
     before(:each) { session.instance_variable_set(:@client_identification, "bar") }
