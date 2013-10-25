@@ -52,7 +52,7 @@ describe Nexop::Message::KexInit do
   end
 
   it "has a first_kex_packet_follows field" do
-    msg.first_kex_packet_follows.should be_nil
+    msg.first_kex_packet_follows.should be_false
   end
 
   it "has a reserved field" do

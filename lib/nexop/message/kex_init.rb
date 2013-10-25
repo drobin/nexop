@@ -13,6 +13,6 @@ class Nexop::Message::KexInit < Nexop::Message::Base
   add_field(:compression_algorithms_server_to_client, type: :name_list, default: [])
   add_field(:languages_client_to_server, type: :name_list, default: [])
   add_field(:languages_server_to_client, type: :name_list, default: [])
-  add_field(:first_kex_packet_follows, type: :boolean)
+  add_field(:first_kex_packet_follows, type: :boolean, default: false)
   add_field(:reserved, type: :uint32, const: 0)
 end
