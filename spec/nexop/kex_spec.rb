@@ -85,5 +85,19 @@ describe Nexop::Kex do
         kex.tick_kex(request.serialize).should be_true
       end
     end
+
+    context "step 3" do
+      before(:each) { kex.instance_variable_set(:@kex_step, 3) }
+
+      it "fails if you don't receive a SSH_MSG_NEWKEYS" do
+        expect{ kex.tick_kex("xxx") }.to raise_error(ArgumentError)
+      end
+
+      it "receives and sends back SSH_MSG_NEWKEYS" do
+        request = Nexop::Message::NewKeys.new
+        kex.should_receive(:message_write).with(request)
+        kex.tick_kex(request.serialize).should be_false
+      end
+    end
   end
 end

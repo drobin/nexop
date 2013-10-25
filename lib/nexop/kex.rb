@@ -77,6 +77,12 @@ module Nexop
         @kex_step = @kex_step + 1
 
         true # continue with the key exchange
+      when 3
+        # step 3: receive and send SSH_MSG_NEWKEYS
+        msg = Message::NewKeys.parse(payload)
+        message_write(msg)
+
+        false # nothing else to do, quit key exchange
       else
         # nothing else to do, quit key exchange
         false
