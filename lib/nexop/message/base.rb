@@ -117,7 +117,7 @@ module Nexop::Message
     # @raise [ArgumentError] if the field `name` does not exist
     def field_get(name)
       meta = self.class.field(name.to_sym)
-      raise ArgumentError, "no such field: #{name}" if meta.nil?
+      raise ArgumentError, "#{name}: no such field" if meta.nil?
 
       if meta.key?(:const)
         meta[:const].respond_to?(:call) ? meta[:const].call(self) : meta[:const]
@@ -143,11 +143,11 @@ module Nexop::Message
     #        - if you try to change the value of a constant field
     def field_set(name, value)
       meta = self.class.field(name.to_sym)
-      raise ArgumentError, "no such field: #{name}" if meta.nil?
+      raise ArgumentError, "#{name}: no such field" if meta.nil?
 
       if meta.key?(:const)
         if self.field_get(name) != value
-          raise ArgumentError, "cannot change constant value"
+          raise ArgumentError, "#{name}: cannot change constant value"
         end
       else
         self.instance_variable_set("@_#{name}", value)
