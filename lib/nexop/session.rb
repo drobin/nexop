@@ -12,6 +12,8 @@ module Nexop
   # The data from {#ibuf}/{#obuf} are consumed/filled with the invocation of
   # the {#tick}-method. You should leave the session open until {#tick}
   # returns `false`.
+  #
+  # Assign a {#hostkey} to the session before starting to {#tick} the session!
   class Session
     ##
     # The input-buffer.
@@ -30,6 +32,12 @@ module Nexop
     #
     # @return [String]
     attr_accessor :obuf
+
+    ##
+    # The hostkey to be used by the session.
+    #
+    # @return [Hostkey]
+    attr_accessor :hostkey
 
     ##
     # The identification string of the server.

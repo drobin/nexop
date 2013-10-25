@@ -45,4 +45,15 @@ describe Nexop::Session do
       session.client_identification.should == "foo"
     end
   end
+
+  context "hostkey" do
+    it "has no key assigned by default" do
+      session.hostkey.should be_nil
+    end
+
+    it "can be assigned" do
+      session.hostkey = 1
+      session.hostkey.should == 1
+    end
+  end
 end
