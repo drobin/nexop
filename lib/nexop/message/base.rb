@@ -1,5 +1,3 @@
-require 'nexop/message/io'
-
 module Nexop::Message
   ##
   # The base-class for all concrete SSH messages.

@@ -1,3 +1,5 @@
+require "nexop/kex"
+
 module Nexop
   ##
   # Abstraction of a SSH connection.
