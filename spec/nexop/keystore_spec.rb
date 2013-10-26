@@ -27,6 +27,24 @@ describe Nexop::Keystore do
     end
   end
 
+  context "exchange_hash" do
+    it "is nil be default" do
+      keystore.exchange_hash.should be_nil
+    end
+  end
+
+  context "session_id" do
+    it "is nil by default" do
+      keystore.session_id.should be_nil
+    end
+  end
+
+  context "shared_secret" do
+    it "is nil by default" do
+      keystore.shared_secret.should be_nil
+    end
+  end
+
   context "algorithms!" do
     [ :c2s, :s2c ].each do |direction|
       it "updates the algorithms for #{direction}" do

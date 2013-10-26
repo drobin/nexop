@@ -1,5 +1,35 @@
 module Nexop
   class Keystore
+    ##
+    # The exchange hash of the connection.
+    #
+    # The exchange-hash is used to create encryption keys and initialization
+    # vectors.
+    #
+    # @return [String]
+    attr_reader :exchange_hash
+
+    ##
+    # Returns the session identifier of the connection.
+    #
+    # The session identifier is used to create encryption keys and
+    # initialization vectors and is valid for the whole session-lifetime
+    # (cannot be changed).
+    #
+    # The session-id is `nil`, until the first {#exchange_hash} is assigned
+    # to the key-store. The initial exchange-hash is also the session-id.
+    #
+    # @return [String]
+    attr_reader :session_id
+
+    # The shared secret of the connection
+    #
+    # The shared secret is used to create encryption keys and initialization
+    # vectors.
+    #
+    # @return [Integer]
+    attr_reader :shared_secret
+
     def initialize
       @encryption_algorithm = Array.new(2, EncryptionAlgorithm::NONE)
       @mac_algorithm = Array.new(2, MacAlgorithm::NONE)
