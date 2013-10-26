@@ -31,6 +31,35 @@ module Nexop
       @mac_algorithm[dir2idx(direction)]
     end
 
+    ##
+    # Updates the algorithms to be used by the session.
+    #
+    # This will force a re-calculation of all the keys and initialization
+    # vectors in the key-store.
+    #
+    # @param direction [:c2s, :s2c] Specifies the direction of the
+    #        communication. Can be either _client to server_ (`:c2s`) or
+    #        _server to client_ (:s2c).
+    # @param encryption [String] The new encryption algorithm for the
+    #        specified `direction`.
+    # @param mac [String] The new MAC algorithm for the specified
+    #        `direction`.
+    # @return [Keystore]
+    # @raise [ArgumentError] if `encryption` or `mac` are not supported
+    #        algorithms.
+    def algorithms!(direction, encryption, mac)
+      unless EncryptionAlgorithm.supported?(encryption)
+        raise ArgumentError, "unsupported encryption algorithm: #{encryption}"
+      end
+
+      unless MacAlgorithm.supported?(mac)
+        raise ArgumentError, "unsupported mac algorithm: #{mac}"
+      end
+
+      @encryption_algorithm[dir2idx(direction)] = encryption
+      @mac_algorithm[dir2idx(direction)] = mac
+    end
+
     private
 
     def dir2idx(direction)
