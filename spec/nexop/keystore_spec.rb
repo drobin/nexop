@@ -66,4 +66,27 @@ describe Nexop::Keystore do
       expect{ keystore.algorithms!(:xxx, Nexop::EncryptionAlgorithm::DES, Nexop::MacAlgorithm::SHA1) }.to raise_error(ArgumentError)
     end
   end
+
+  context "keys!" do
+    it "updates the exchange hash" do
+      keystore.keys!("xxx", 1)
+      keystore.exchange_hash.should == "xxx"
+    end
+
+    it "updates the session id" do
+      keystore.keys!("xxx", 1)
+      keystore.session_id.should == "xxx"
+    end
+
+    it "does not update the session id on any further invocation" do
+      keystore.keys!("xxx", 1)
+      keystore.keys!("abc", 1)
+      keystore.session_id.should == "xxx"
+    end
+
+    it "updates the shared secret" do
+      keystore.keys!("xxx", 4711)
+      keystore.shared_secret.should == 4711
+    end
+  end
 end

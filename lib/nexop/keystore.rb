@@ -90,6 +90,22 @@ module Nexop
       @mac_algorithm[dir2idx(direction)] = mac
     end
 
+    ##
+    # Assigns an exchange hash and a shared secret to the keystore.
+    #
+    # This will force a re-calculation of all the keys and initialization
+    # vectors. The first exchange hash assigned to the key-store will also
+    # update the {#session_id}.
+    #
+    # @param exchange_hash [String] the new exchange hash
+    # @param shared_secret [Integer] the new shared secret
+    # @return [Keystore]
+    def keys!(exchange_hash, shared_secret)
+      @exchange_hash = exchange_hash.clone
+      @session_id = exchange_hash.clone if self.session_id.nil?
+      @shared_secret = shared_secret
+    end
+
     private
 
     def dir2idx(direction)
