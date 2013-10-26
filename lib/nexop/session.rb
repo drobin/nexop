@@ -1,4 +1,4 @@
-require "nexop/kex"
+require "nexop/session/kex"
 
 module Nexop
   ##
