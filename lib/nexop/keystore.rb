@@ -33,6 +33,9 @@ module Nexop
     def initialize
       @encryption_algorithm = Array.new(2, EncryptionAlgorithm::NONE)
       @mac_algorithm = Array.new(2, MacAlgorithm::NONE)
+      @encryption_key = Array.new(2, nil)
+      @initialization_vector = Array.new(2, nil)
+      @integrity_key = Array.new(2, nil)
     end
 
     ##
@@ -59,6 +62,66 @@ module Nexop
     # @see MacAlgorithm
     def mac_algorithm(direction)
       @mac_algorithm[dir2idx(direction)]
+    end
+
+    ##
+    # Returns the encryption-key used for encryption/decryption of data for
+    # the `direction`.
+    #
+    # The encryption-key depends on the {#session_id}, the {#shared_secret}
+    # and the {#encryption_algorithm}. Changing one of them will trigger a
+    # recalculation of the encryption key. Setting the
+    # {#encryption_algorithm} to {EncryptionAlgorithm::NONE} will remove the
+    # encryption key.
+    #
+    # @param direction [:c2s, :s2c] Specifies the direction of the
+    #        communication. Can be either _client to server_ (`:c2s`) or
+    #        _server to client_ (:s2c).
+    # @return [String] The encryption-key used for encryption-operation of
+    #         the given `direction`. If encryption is disabled
+    #         ({EncryptionAlgorithm::NONE}), then `nil` is returned.
+    def encryption_key(direction)
+      @encryption_key[dir2idx(direction)]
+    end
+
+    ##
+    # Returns the initialization vector used for encryption/decryption of
+    # data for the given `direction`.
+    #
+    # The initialization vectors depends on the {#session_id}, the
+    # {#shared_secret} and the {#encryption_algorithm}. Changing one of them
+    # will trigger a recalculation of the initialization vectors. Setting the
+    # {#encryption_algorithm} to {EncryptionAlgorithm::NONE} will remove the
+    # initialization vectors.
+    #
+    # @param direction [:c2s, :s2c] Specifies the direction of the
+    #        communication. Can be either _client to server_ (`:c2s`) or
+    #        _server to client_ (:s2c).
+    # @return [String] The initialization vector used for
+    #         encryption-operation of the given `direction`. If encryption is
+    #         disabled ({EncryptionAlgorithm::NONE}), then `nil` is returned.
+    def initialization_vector(direction)
+      @initialization_vector[dir2idx(direction)]
+    end
+
+    ##
+    # Returns the integrity key used for MAC-calculation/validation for the
+    # given `direction`.
+    #
+    # The integrity keys depends on the {#session_id}, the {#shared_secret}
+    # and the {#mac_algorithm}. Changing one of them will trigger a
+    # recalculation of the integrety key. Setting the MAC-algorithm to
+    # {MacAlgorithm::NONE} will remove the integrty key.
+    #
+    # @param direction [:c2s, :s2c] Specifies the direction of the
+    #        communication. Can be either _client to server_ (`:c2s`) or
+    #        _server to client_ (:s2c).
+    # @return [String] The integrity key used for
+    #         MAC-calculation/verification for the given `direction`. If
+    #         MAC-calculation is disabled ({MacAlgorithm::NONE}), then `nil`
+    #         is returned.
+    def integrity_key(direction)
+      @integrity_key[dir2idx(direction)]
     end
 
     ##

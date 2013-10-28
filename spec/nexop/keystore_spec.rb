@@ -45,6 +45,30 @@ describe Nexop::Keystore do
     end
   end
 
+  context "encryption_key" do
+    [ :c2s, :s2c ].each do |direction|
+      it "is nil by default for #{direction}" do
+        keystore.encryption_key(direction).should be_nil
+      end
+    end
+  end
+
+  context "initialization_vector" do
+    [ :c2s, :s2c ].each do |direction|
+      it "is nil by default for #{direction}" do
+        keystore.initialization_vector(direction).should be_nil
+      end
+    end
+  end
+
+  context "integrity_key" do
+    [ :c2s, :s2c ].each do |direction|
+      it "is nil by default for #{direction}" do
+        keystore.integrity_key(direction).should be_nil
+      end
+    end
+  end
+
   context "algorithms!" do
     [ :c2s, :s2c ].each do |direction|
       it "updates the algorithms for #{direction}" do
