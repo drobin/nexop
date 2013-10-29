@@ -8,6 +8,11 @@ module Nexop
     attr_reader :name
 
     ##
+    # Returns the block-size of the cipher.
+    # @return [Integer]
+    attr_reader :block_size
+
+    ##
     # three-key 3DES in CBC mode
     DES = "3des-cbc"
 
@@ -35,14 +40,27 @@ module Nexop
     def self.from_s(algorithm)
       if EncryptionAlgorithm.supported?(algorithm)
         @@instances ||= {}
-        @@instances[algorithm] ||= EncryptionAlgorithm.new(algorithm)
+        @@instances[algorithm] ||= EncryptionAlgorithm.new(algorithm, CREDENTIALS[algorithm])
       end
     end
 
     private
 
-    def initialize(algorithm)
-      @name = algorithm
+    CREDENTIALS = {
+      DES => {
+        :block_size => 8
+      },
+      NONE => {
+        :block_size => 8
+      }
+    }
+
+    def initialize(name, credentials = {})
+      @name = name
+
+      credentials.each do |key, value|
+        self.instance_variable_set("@#{key}", value)
+      end
     end
   end
 end
