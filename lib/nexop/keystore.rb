@@ -81,7 +81,14 @@ module Nexop
     #         the given `direction`. If encryption is disabled
     #         ({EncryptionAlgorithm::NONE}), then `nil` is returned.
     def encryption_key(direction)
-      @encryption_key[dir2idx(direction)]
+      return nil if self.encryption_algorithm(direction) == EncryptionAlgorithm::NONE
+      return nil if self.shared_secret.nil? || self.exchange_hash.nil?
+
+      key = @encryption_key[dir2idx(direction)]
+      return key if key # already calculated
+
+      key = generate_key(encryption_key_char(direction))
+      @encryption_key[dir2idx(direction)] = resize_key(key, 24)
     end
 
     ##
@@ -151,6 +158,9 @@ module Nexop
 
       @encryption_algorithm[dir2idx(direction)] = encryption
       @mac_algorithm[dir2idx(direction)] = mac
+
+      # reset keys already calculated
+      @encryption_key[dir2idx(direction)] = nil
     end
 
     ##
@@ -167,14 +177,52 @@ module Nexop
       @exchange_hash = exchange_hash.clone
       @session_id = exchange_hash.clone if self.session_id.nil?
       @shared_secret = shared_secret
+
+      # Reset keys already calculated
+      [ :c2s, :s2c ].each do |direction|
+        @encryption_key[dir2idx(direction)] = nil
+      end
     end
 
     private
+
+    def generate_key(key_char)
+      sha1 = OpenSSL::Digest::SHA1.new # TODO Depends on key exchange method
+
+      sha1 << Message::IO.mpint(:encode, self.shared_secret)
+      sha1 << self.exchange_hash
+      sha1 << key_char
+      sha1 << self.session_id
+
+      sha1.digest
+    end
+
+    def resize_key(key, min)
+      while key.size < min
+        sha1 = OpenSSL::Digest::SHA1.new # TODO Depends on key exchange method
+
+        sha1 << Message::IO.mpint(:encode, self.shared_secret)
+        sha1 << self.session_id
+        sha1 << key
+
+        key = key + sha1.digest
+      end
+
+      key
+    end
 
     def dir2idx(direction)
       case direction
       when :c2s then 0
       when :s2c then 1
+      else raise ArgumentError, "invalid direction: #{direction}"
+      end
+    end
+
+    def encryption_key_char(direction)
+      case direction
+      when :c2s then "C"
+      when :s2c then "D"
       else raise ArgumentError, "invalid direction: #{direction}"
       end
     end
