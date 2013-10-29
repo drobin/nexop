@@ -242,6 +242,22 @@ describe Nexop::Keystore do
       end
     end
 
+    it "creates a cipher with decryption enabled for :c2s" do
+      keystore.keys!("xxx", 4711)
+      keystore.algorithms!(:c2s, Nexop::EncryptionAlgorithm::DES, Nexop::MacAlgorithm::NONE)
+
+      OpenSSL::Cipher.any_instance.should_receive(:decrypt)
+      keystore.cipher(:c2s)
+    end
+
+    it "creates a cipher with encryption enabled for :s2c" do
+      keystore.keys!("xxx", 4711)
+      keystore.algorithms!(:s2c, Nexop::EncryptionAlgorithm::DES, Nexop::MacAlgorithm::NONE)
+
+      OpenSSL::Cipher.any_instance.should_receive(:encrypt)
+      keystore.cipher(:s2c)
+    end
+
     it "does not accept any other direction than :c2s and :s2c" do
       expect{ keystore.cipher("xxx") }.to raise_error(ArgumentError)
     end

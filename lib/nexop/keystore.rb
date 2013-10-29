@@ -168,7 +168,10 @@ module Nexop
       cipher = @cipher[dir2idx(direction)]
       return cipher if cipher # already created
 
-      cipher = OpenSSL::Cipher.new('des-ede3-cbc')
+      algorithm = EncryptionAlgorithm.from_s(self.encryption_algorithm(direction))
+
+      cipher = OpenSSL::Cipher.new(algorithm.cipher_spec)
+      cipher.send (direction == :c2s) ? :decrypt : :encrypt
       cipher.key = ek
       cipher.iv = iv
       @cipher[dir2idx(direction)] = cipher
