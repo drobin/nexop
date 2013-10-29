@@ -1,13 +1,13 @@
 require 'spec_helper'
 
 describe Nexop::MacAlgorithm do
-  ALL_ALGORITHMS = [
+  MAC_ALGORITHMS = [
     Nexop::MacAlgorithm::SHA1,
     Nexop::MacAlgorithm::NONE
   ]
 
   context "supported?" do
-    ALL_ALGORITHMS.each do |algorithm|
+    MAC_ALGORITHMS.each do |algorithm|
       it "#{algorithm} is a supported algorithm" do
         Nexop::MacAlgorithm::supported?(algorithm).should be_true
       end
@@ -19,7 +19,7 @@ describe Nexop::MacAlgorithm do
   end
 
   context "from_s" do
-    ALL_ALGORITHMS.each do |algorithm|
+    MAC_ALGORITHMS.each do |algorithm|
       it "creates an instance from #{algorithm}" do
         Nexop::MacAlgorithm.from_s(algorithm).should be_a_kind_of(Nexop::MacAlgorithm)
       end
@@ -36,7 +36,7 @@ describe Nexop::MacAlgorithm do
   end
 
   context "name" do
-    ALL_ALGORITHMS.each do |algorithm|
+    MAC_ALGORITHMS.each do |algorithm|
       it "returns the name of #{algorithm}" do
         Nexop::MacAlgorithm.from_s(algorithm).name.should == algorithm
       end

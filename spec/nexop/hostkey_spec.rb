@@ -9,17 +9,14 @@ describe Nexop::Hostkey do
     end
   end
 
-  let(:hostkey) { Nexop::Hostkey.from_file(@priv_path, @pub_path) }
-
-  before(:each) do
-    rsa = OpenSSL::PKey::RSA.generate(1024)
-    @priv_path = dump_pem(rsa)
-    @pub_path = dump_pem(rsa.public_key)
-  end
+  let(:rsa) { OpenSSL::PKey::RSA.generate(1024) }
+  let(:priv_path) { dump_pem(rsa) }
+  let(:pub_path) { dump_pem(rsa.public_key) }
+  let(:hostkey) { Nexop::Hostkey.from_file(priv_path, pub_path) }
 
   after(:each) do
-    File.unlink(@priv_path)
-    File.unlink(@pub_path)
+    File.unlink(priv_path) if File.exists?(priv_path)
+    File.unlink(pub_path) if File.exists?(pub_path)
   end
 
   context "from_file" do
@@ -30,9 +27,9 @@ describe Nexop::Hostkey do
     end
 
     it "can specify a separate path for the public key" do
-      hk = Nexop::Hostkey.from_file(@priv_path, @pub_path)
-      hk.priv_path.should == @priv_path
-      hk.pub_path.should == @pub_path
+      hk = Nexop::Hostkey.from_file(priv_path, pub_path)
+      hk.priv_path.should == priv_path
+      hk.pub_path.should == pub_path
     end
   end
 

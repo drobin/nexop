@@ -1,13 +1,13 @@
 require 'spec_helper'
 
 describe Nexop::EncryptionAlgorithm do
-  ALL_ALGORITHMS = [
+  ENC_ALGORITHMS = [
     Nexop::EncryptionAlgorithm::DES,
     Nexop::EncryptionAlgorithm::NONE
   ]
 
   context "supported?" do
-    ALL_ALGORITHMS.each do |algorithm|
+    ENC_ALGORITHMS.each do |algorithm|
       it "#{algorithm} is a valid algorithm" do
         Nexop::EncryptionAlgorithm.supported?(algorithm).should be_true
       end
@@ -19,7 +19,7 @@ describe Nexop::EncryptionAlgorithm do
   end
 
   context "from_s" do
-    ALL_ALGORITHMS.each do |algorithm|
+    ENC_ALGORITHMS.each do |algorithm|
       it "creates an instance from #{algorithm}" do
         Nexop::EncryptionAlgorithm.from_s(algorithm).should be_a_kind_of(Nexop::EncryptionAlgorithm)
       end
@@ -36,7 +36,7 @@ describe Nexop::EncryptionAlgorithm do
   end
 
   context "name" do
-    ALL_ALGORITHMS.each do |algorithm|
+    ENC_ALGORITHMS.each do |algorithm|
       it "returns the name of #{algorithm}" do
         Nexop::EncryptionAlgorithm.from_s(algorithm).name.should == algorithm
       end
