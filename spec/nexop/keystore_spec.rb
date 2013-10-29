@@ -204,6 +204,49 @@ describe Nexop::Keystore do
     end
   end
 
+  context "cipher" do
+    [ :c2s, :s2c ].each do |direction|
+      it "returns nil by default for #{direction}" do
+        keystore.cipher(direction).should be_nil
+      end
+
+      it "returns a cipher when you have an encryption key for #{direction}" do
+        keystore.keys!("xxx", 4711)
+        keystore.algorithms!(direction, Nexop::EncryptionAlgorithm::DES, Nexop::MacAlgorithm::NONE)
+        keystore.cipher(direction).should be_a_kind_of(OpenSSL::Cipher)
+      end
+
+      it "always returns the same cipher once the encryption key is calculated for #{direction}" do
+        keystore.keys!("xxx", 4711)
+        keystore.algorithms!(direction, Nexop::EncryptionAlgorithm::DES, Nexop::MacAlgorithm::NONE)
+        cipher = keystore.cipher(direction)
+        keystore.cipher(direction).should equal(cipher)
+      end
+
+      it "creates a new cipher when the encryption key changes for #{direction}" do
+        keystore.keys!("xxx", 4711)
+        keystore.algorithms!(direction, Nexop::EncryptionAlgorithm::DES, Nexop::MacAlgorithm::NONE)
+        cipher_old = keystore.cipher(direction)
+
+        keystore.keys!("abc", 1147)
+        keystore.cipher(direction).should_not equal(cipher_old)
+      end
+
+      it "resets the cipher if you switch the algorithm back to #{Nexop::EncryptionAlgorithm::NONE} for #{direction}" do
+        keystore.keys!("xxx", 4711)
+        keystore.algorithms!(direction, Nexop::EncryptionAlgorithm::DES, Nexop::MacAlgorithm::NONE)
+        keystore.cipher(direction).should_not be_nil
+
+        keystore.algorithms!(direction, Nexop::EncryptionAlgorithm::NONE, Nexop::MacAlgorithm::NONE)
+        keystore.cipher(direction).should be_nil
+      end
+    end
+
+    it "does not accept any other direction than :c2s and :s2c" do
+      expect{ keystore.cipher("xxx") }.to raise_error(ArgumentError)
+    end
+  end
+
   context "algorithms!" do
     [ :c2s, :s2c ].each do |direction|
       it "updates the algorithms for #{direction}" do

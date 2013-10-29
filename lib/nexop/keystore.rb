@@ -36,6 +36,7 @@ module Nexop
       @encryption_key = Array.new(2, nil)
       @initialization_vector = Array.new(2, nil)
       @integrity_key = Array.new(2, nil)
+      @cipher = Array.new(2, nil)
     end
 
     ##
@@ -145,6 +146,35 @@ module Nexop
     end
 
     ##
+    # Returns the cipher-instance for the current {#encryption_algorithm}.
+    #
+    # The cipher is already prepared with the {#encryption_key} and the
+    # {#initialization_vector}. When the encryption-algorithm is set to
+    # {EncryptionAlgorithm::NONE}, then no cipher is created and `nil` is
+    # returned.
+    #
+    # @param direction [:c2s, :s2c] Specifies the direction of the
+    #        communication. Can be either _client to server_ (`:c2s`) or
+    #        _server to client_ (:s2c).
+    # @return [OpenSSL::Cipher] The cipher-instance for the current
+    #         encryption-algorithm. When the {#encryption_algorithm} is set
+    #         to {EncryptionAlgorithm::NONE}, then `nil` is returned.
+    def cipher(direction)
+      ek = self.encryption_key(direction)
+      iv = self.initialization_vector(direction)
+
+      return nil if ek.nil? || iv.nil?
+
+      cipher = @cipher[dir2idx(direction)]
+      return cipher if cipher # already created
+
+      cipher = OpenSSL::Cipher.new('des-ede3-cbc')
+      cipher.key = ek
+      cipher.iv = iv
+      @cipher[dir2idx(direction)] = cipher
+    end
+
+    ##
     # Updates the algorithms to be used by the session.
     #
     # This will force a re-calculation of all the keys and initialization
@@ -176,6 +206,9 @@ module Nexop
       @encryption_key[dir2idx(direction)] = nil
       @initialization_vector[dir2idx(direction)] = nil
       @integrity_key[dir2idx(direction)] = nil
+
+      # reset cipher
+      @cipher[dir2idx(direction)] = nil
     end
 
     ##
@@ -193,11 +226,14 @@ module Nexop
       @session_id = exchange_hash.clone if self.session_id.nil?
       @shared_secret = shared_secret
 
-      # Reset keys already calculated
       [ :c2s, :s2c ].each do |direction|
+        # Reset keys already calculated
         @encryption_key[dir2idx(direction)] = nil
         @initialization_vector[dir2idx(direction)] = nil
         @integrity_key[dir2idx(direction)] = nil
+
+        # reset cipher
+        @cipher[dir2idx(direction)] = nil
       end
     end
 
