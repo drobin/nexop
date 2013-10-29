@@ -8,6 +8,15 @@ module Nexop
     attr_reader :name
 
     ##
+    # Returns the specification of the cipher.
+    #
+    # The spec is used to create a `OpenSSL::Cipher`-instance with the
+    # correct algorithm.
+    #
+    # @return [String]
+    attr_reader :cipher_spec
+
+    ##
     # Returns the block-size of the cipher.
     # @return [Integer]
     attr_reader :block_size
@@ -48,10 +57,12 @@ module Nexop
 
     CREDENTIALS = {
       DES => {
-        :block_size => 8
+        :block_size => 8,
+        :cipher_spec => "DES-EDE3-CBC"
       },
       NONE => {
-        :block_size => 8
+        :block_size => 8,
+        :cipher_spec => nil
       }
     }
 

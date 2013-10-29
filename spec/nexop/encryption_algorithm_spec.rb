@@ -45,6 +45,10 @@ describe Nexop::EncryptionAlgorithm do
     it "block_size should be 8" do
       algorithm.block_size.should == 8
     end
+
+    it "cipher_spec should be DES-EDE3-CBC" do
+      algorithm.cipher_spec.should == "DES-EDE3-CBC"
+    end
   end
 
   context Nexop::EncryptionAlgorithm::NONE do
@@ -56,6 +60,10 @@ describe Nexop::EncryptionAlgorithm do
 
     it "block_size should be 8" do
       algorithm.block_size.should == 8
+    end
+
+    it "cipher_spec should be nil" do
+      algorithm.cipher_spec.should be_nil
     end
   end
 end
