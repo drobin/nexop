@@ -174,6 +174,7 @@ module Nexop
       cipher.send (direction == :c2s) ? :decrypt : :encrypt
       cipher.key = ek
       cipher.iv = iv
+      cipher.padding = 0
       @cipher[dir2idx(direction)] = cipher
     end
 
