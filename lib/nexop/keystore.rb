@@ -108,7 +108,14 @@ module Nexop
     #         encryption-operation of the given `direction`. If encryption is
     #         disabled ({EncryptionAlgorithm::NONE}), then `nil` is returned.
     def initialization_vector(direction)
-      @initialization_vector[dir2idx(direction)]
+      return nil if self.encryption_algorithm(direction) == EncryptionAlgorithm::NONE
+      return nil if self.shared_secret.nil? || self.exchange_hash.nil?
+
+      vector = @initialization_vector[dir2idx(direction)]
+      return vector if vector # already calculated
+
+      vector = generate_key(initialization_vector_char(direction))
+      @initialization_vector[dir2idx(direction)] = resize_key(vector, 24)
     end
 
     ##
@@ -161,6 +168,7 @@ module Nexop
 
       # reset keys already calculated
       @encryption_key[dir2idx(direction)] = nil
+      @initialization_vector[dir2idx(direction)] = nil
     end
 
     ##
@@ -181,6 +189,7 @@ module Nexop
       # Reset keys already calculated
       [ :c2s, :s2c ].each do |direction|
         @encryption_key[dir2idx(direction)] = nil
+        @initialization_vector[dir2idx(direction)] = nil
       end
     end
 
@@ -223,6 +232,14 @@ module Nexop
       case direction
       when :c2s then "C"
       when :s2c then "D"
+      else raise ArgumentError, "invalid direction: #{direction}"
+      end
+    end
+
+    def initialization_vector_char(direction)
+      case direction
+      when :c2s then "A"
+      when :s2c then "B"
       else raise ArgumentError, "invalid direction: #{direction}"
       end
     end
