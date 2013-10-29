@@ -156,6 +156,51 @@ describe Nexop::Keystore do
       it "is nil by default for #{direction}" do
         keystore.integrity_key(direction).should be_nil
       end
+
+      it "is nil when you have some keys but no algorithm for #{direction}" do
+        keystore.keys!("xxx", 4711)
+        keystore.integrity_key(direction).should be_nil
+      end
+
+      it "is nil when you have an algorithm but no keys for #{direction}" do
+        keystore.algorithms!(direction, Nexop::EncryptionAlgorithm::NONE, Nexop::MacAlgorithm::SHA1)
+        keystore.integrity_key(direction).should be_nil
+      end
+
+      it "calculates a key for #{direction}" do
+        keystore.keys!("xxx", 4711)
+        keystore.algorithms!(direction, Nexop::EncryptionAlgorithm::NONE, Nexop::MacAlgorithm::SHA1)
+        keystore.integrity_key(direction).should_not be_nil
+      end
+
+      it "returns the same key once calculated for #{direction}" do
+        keystore.keys!("xxx", 4711)
+        keystore.algorithms!(direction, Nexop::EncryptionAlgorithm::NONE, Nexop::MacAlgorithm::SHA1)
+        key = keystore.integrity_key(direction)
+        keystore.integrity_key(direction).should equal(key)
+      end
+
+      it "changes the key when new keys are assigned for #{direction}" do
+        keystore.keys!("xxx", 4711)
+        keystore.algorithms!(direction, Nexop::EncryptionAlgorithm::NONE, Nexop::MacAlgorithm::SHA1)
+        key_old = keystore.integrity_key(direction)
+
+        keystore.keys!("abc", 1147)
+        keystore.integrity_key(direction).should_not == key_old
+      end
+
+      it "resets the key if you switch the algorithm to #{Nexop::MacAlgorithm::NONE} for #{direction}" do
+        keystore.keys!("xxx", 4711)
+        keystore.algorithms!(direction, Nexop::EncryptionAlgorithm::NONE, Nexop::MacAlgorithm::SHA1)
+        keystore.integrity_key(direction).should_not be_nil
+
+        keystore.algorithms!(direction, Nexop::EncryptionAlgorithm::NONE, Nexop::MacAlgorithm::NONE)
+        keystore.integrity_key(direction).should be_nil
+      end
+    end
+
+    it "does not accept any other direction than :c2s and :s2c" do
+      expect{ keystore.integrity_key("xxx") }.to raise_error(ArgumentError)
     end
   end
 

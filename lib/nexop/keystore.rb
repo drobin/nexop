@@ -135,7 +135,13 @@ module Nexop
     #         MAC-calculation is disabled ({MacAlgorithm::NONE}), then `nil`
     #         is returned.
     def integrity_key(direction)
-      @integrity_key[dir2idx(direction)]
+      return nil if self.mac_algorithm(direction) == MacAlgorithm::NONE
+      return nil if self.shared_secret.nil? || self.exchange_hash.nil?
+
+      key = @integrity_key[dir2idx(direction)]
+      return key if key # already calculated
+
+      @integrity_key[dir2idx(direction)] = generate_key(integrity_key_char(direction))
     end
 
     ##
@@ -169,6 +175,7 @@ module Nexop
       # reset keys already calculated
       @encryption_key[dir2idx(direction)] = nil
       @initialization_vector[dir2idx(direction)] = nil
+      @integrity_key[dir2idx(direction)] = nil
     end
 
     ##
@@ -190,6 +197,7 @@ module Nexop
       [ :c2s, :s2c ].each do |direction|
         @encryption_key[dir2idx(direction)] = nil
         @initialization_vector[dir2idx(direction)] = nil
+        @integrity_key[dir2idx(direction)] = nil
       end
     end
 
@@ -240,6 +248,14 @@ module Nexop
       case direction
       when :c2s then "A"
       when :s2c then "B"
+      else raise ArgumentError, "invalid direction: #{direction}"
+      end
+    end
+
+    def integrity_key_char(direction)
+      case direction
+      when :c2s then "E"
+      when :s2c then "F"
       else raise ArgumentError, "invalid direction: #{direction}"
       end
     end
