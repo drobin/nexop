@@ -97,25 +97,25 @@ describe Nexop::Packet do
       end
 
       context "create" do
-        it "creates a packet with empty payload for #{enc_alg}" do
-          keystore.algorithms!(:c2s, enc_alg, Nexop::MacAlgorithm::NONE)
-          keystore.algorithms!(:s2c, enc_alg, Nexop::MacAlgorithm::NONE)
+        it "creates a packet with empty payload for #{enc_alg}/#{mac_alg}" do
+          keystore.algorithms!(:c2s, enc_alg, mac_alg)
+          keystore.algorithms!(:s2c, enc_alg, mac_alg)
 
           packet = Nexop::Packet.create("", keystore, 0)
           decrypt(packet, keystore).unpack("C*").should == [0, 0, 0, 12, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         end
 
-        it "creates a packet with padding for #{enc_alg}" do
-          keystore.algorithms!(:c2s, enc_alg, Nexop::MacAlgorithm::NONE)
-          keystore.algorithms!(:s2c, enc_alg, Nexop::MacAlgorithm::NONE)
+        it "creates a packet with padding for #{enc_alg}/#{mac_alg}" do
+          keystore.algorithms!(:c2s, enc_alg, mac_alg)
+          keystore.algorithms!(:s2c, enc_alg, mac_alg)
 
           packet = Nexop::Packet.create([1, 2, 3, 4, 5, 6].pack("C*"), keystore, 0)
           decrypt(packet, keystore).unpack("C*").should == [0, 0, 0, 12, 5, 1, 2, 3, 4, 5, 6, 0, 0, 0, 0, 0]
         end
 
-        it "creates a packet a a calculated padding >= 4 for #{enc_alg}" do
-          keystore.algorithms!(:c2s, enc_alg, Nexop::MacAlgorithm::NONE)
-          keystore.algorithms!(:s2c, enc_alg, Nexop::MacAlgorithm::NONE)
+        it "creates a packet a a calculated padding >= 4 for #{enc_alg}/#{mac_alg}" do
+          keystore.algorithms!(:c2s, enc_alg, mac_alg)
+          keystore.algorithms!(:s2c, enc_alg, mac_alg)
 
           packet = Nexop::Packet.create([1, 2, 3, 4, 5, 6, 7, 8].pack("C*"), keystore, 0)
           decrypt(packet, keystore).unpack("C*").should == [0, 0, 0, 20, 11, 1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]

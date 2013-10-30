@@ -87,8 +87,9 @@ module Nexop
     #        data integrity (if enabled).
     # @return [String] A binary string, which contains the new packet.
     def self.create(payload, keystore, sequence_number)
-      algorithm = EncryptionAlgorithm.from_s(keystore.encryption_algorithm(:s2c))
-      block_size = algorithm.block_size
+      enc_spec = EncryptionAlgorithm.from_s(keystore.encryption_algorithm(:s2c))
+      mac_spec = MacAlgorithm.from_s(keystore.mac_algorithm(:s2c))
+      block_size = enc_spec.block_size
 
       length = ((payload.length + 5) / block_size.to_f).ceil * block_size
       padding_length = length - 5 - payload.length
@@ -103,7 +104,15 @@ module Nexop
       data += payload
       data += Array.new(padding_length, 0).pack("C*")
 
-      keystore.cipher(:s2c).update(data)
+      out = keystore.cipher(:s2c).update(data)
+
+      if keystore.mac_algorithm(:s2c) != MacAlgorithm::NONE
+        # create a MAC
+        hmac_in = [ sequence_number ].pack("N") + data
+        out += OpenSSL::HMAC.digest(OpenSSL::Digest.new(mac_spec.digest_spec), keystore.integrity_key(:s2c), hmac_in)
+      end
+
+      out
     end
   end
 end
