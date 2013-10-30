@@ -35,11 +35,43 @@ describe Nexop::MacAlgorithm do
     end
   end
 
-  context "name" do
-    MAC_ALGORITHMS.each do |algorithm|
-      it "returns the name of #{algorithm}" do
-        Nexop::MacAlgorithm.from_s(algorithm).name.should == algorithm
-      end
+  context Nexop::MacAlgorithm::SHA1 do
+    let(:algorithm) { Nexop::MacAlgorithm.from_s(Nexop::MacAlgorithm::SHA1) }
+
+    it "name should be #{Nexop::MacAlgorithm::SHA1}" do
+      algorithm.name.should == Nexop::MacAlgorithm::SHA1
+    end
+
+    it "digest_spec should be sha1" do
+      algorithm.digest_spec.should == "sha1"
+    end
+
+    it "key_length should be 20" do
+      algorithm.key_length.should == 20
+    end
+
+    it "digest_length should be 20" do
+      algorithm.digest_length.should == 20
+    end
+  end
+
+  context Nexop::MacAlgorithm::NONE do
+    let(:algorithm) { Nexop::MacAlgorithm.from_s(Nexop::MacAlgorithm::NONE) }
+
+    it "name should be #{Nexop::MacAlgorithm::NONE}" do
+      algorithm.name.should == Nexop::MacAlgorithm::NONE
+    end
+
+    it "digest_spec should be nil" do
+      algorithm.digest_spec.should be_nil
+    end
+
+    it "key_length should be 0" do
+      algorithm.key_length.should == 0
+    end
+
+    it "digest_length should be 0" do
+      algorithm.digest_length.should == 0
     end
   end
 end
