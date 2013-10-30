@@ -107,7 +107,7 @@ module Nexop
       end
 
       # parse as many packets as available in the input-buffer
-      while payload = Nexop::Packet.parse(@ibuf, self.keystore)
+      while payload = Nexop::Packet.parse(@ibuf, self.keystore, 0)
         # tick per packet-payload: quit the session when tick_payload request it
         return false unless tick_payload(payload)
       end

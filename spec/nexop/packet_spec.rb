@@ -22,7 +22,7 @@ describe Nexop::Packet do
           keystore.algorithms!(:s2c, algorithm, Nexop::MacAlgorithm::NONE)
 
           data = (len == 0 ? "" : encrypt(PACKET[0..len - 1], keystore))
-          Nexop::Packet.parse(data, keystore).should be_nil
+          Nexop::Packet.parse(data, keystore, 0).should be_nil
           data.length.should == len
         end
       end
@@ -34,7 +34,7 @@ describe Nexop::Packet do
         bin = PACKET.clone << 12
         bin[3] = 13
         data = encrypt(bin, keystore)
-        expect{ Nexop::Packet.parse(data) }.to raise_error(ArgumentError)
+        expect{ Nexop::Packet.parse(data, keystore, 0) }.to raise_error(ArgumentError)
         data.length.should == 17
       end
 
@@ -45,7 +45,7 @@ describe Nexop::Packet do
         bin = PACKET.clone
         bin[3] = 3
         data = encrypt(bin, keystore)
-        expect{ Nexop::Packet.parse(data) }.to raise_error(ArgumentError)
+        expect{ Nexop::Packet.parse(data, keystore, 0) }.to raise_error(ArgumentError)
         data.length.should == 16
       end
 
@@ -56,7 +56,7 @@ describe Nexop::Packet do
         bin = PACKET.clone
         bin[4] = 12
         data = encrypt(bin, keystore)
-        expect{ Nexop::Packet.parse(data, keystore) }.to raise_error(ArgumentError)
+        expect{ Nexop::Packet.parse(data, keystore, 0) }.to raise_error(ArgumentError)
         data.length.should == 16
       end
 
@@ -64,7 +64,7 @@ describe Nexop::Packet do
         keystore.algorithms!(:c2s, algorithm, Nexop::MacAlgorithm::NONE)
         keystore.algorithms!(:s2c, algorithm, Nexop::MacAlgorithm::NONE)
 
-        payload = Nexop::Packet.parse(encrypt(PACKET, keystore), keystore)
+        payload = Nexop::Packet.parse(encrypt(PACKET, keystore), keystore, 0)
         payload.unpack("C*").should == [1, 2, 3, 4, 5, 6, 7]
       end
 
@@ -73,7 +73,7 @@ describe Nexop::Packet do
         keystore.algorithms!(:s2c, algorithm, Nexop::MacAlgorithm::NONE)
 
         data = encrypt(PACKET, keystore) + "abc"
-        Nexop::Packet.parse(data, keystore)
+        Nexop::Packet.parse(data, keystore, 0)
         data.should == "abc"
       end
     end
@@ -85,7 +85,7 @@ describe Nexop::Packet do
         keystore.algorithms!(:c2s, algorithm, Nexop::MacAlgorithm::NONE)
         keystore.algorithms!(:s2c, algorithm, Nexop::MacAlgorithm::NONE)
 
-        packet = Nexop::Packet.create("", keystore)
+        packet = Nexop::Packet.create("", keystore, 0)
         decrypt(packet, keystore).unpack("C*").should == [0, 0, 0, 12, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
       end
 
@@ -93,7 +93,7 @@ describe Nexop::Packet do
         keystore.algorithms!(:c2s, algorithm, Nexop::MacAlgorithm::NONE)
         keystore.algorithms!(:s2c, algorithm, Nexop::MacAlgorithm::NONE)
 
-        packet = Nexop::Packet.create([1, 2, 3, 4, 5, 6].pack("C*"), keystore)
+        packet = Nexop::Packet.create([1, 2, 3, 4, 5, 6].pack("C*"), keystore, 0)
         decrypt(packet, keystore).unpack("C*").should == [0, 0, 0, 12, 5, 1, 2, 3, 4, 5, 6, 0, 0, 0, 0, 0]
       end
 
@@ -101,7 +101,7 @@ describe Nexop::Packet do
         keystore.algorithms!(:c2s, algorithm, Nexop::MacAlgorithm::NONE)
         keystore.algorithms!(:s2c, algorithm, Nexop::MacAlgorithm::NONE)
 
-        packet = Nexop::Packet.create([1, 2, 3, 4, 5, 6, 7, 8].pack("C*"), keystore)
+        packet = Nexop::Packet.create([1, 2, 3, 4, 5, 6, 7, 8].pack("C*"), keystore, 0)
         decrypt(packet, keystore).unpack("C*").should == [0, 0, 0, 20, 11, 1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
       end
     end

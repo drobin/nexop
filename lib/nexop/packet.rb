@@ -23,10 +23,12 @@ module Nexop
     # @param keystore [Keystore] The keystore contains all
     #        encryption-relevant stuff (algorithms, keys, ...), which are
     #        used for decryption.
+    # @param sequence_number [Integer] Sequence number used for checking
+    #        data integrity (if enabled).
     # @return [String] A binary string contains the payload of the packet or
     #                  `nil` if no packet is available.
     # @raise [ArgumentError] The input `data` could not be parsed
-    def self.parse(data, keystore)
+    def self.parse(data, keystore, sequence_number)
       algorithm = EncryptionAlgorithm.from_s(keystore.encryption_algorithm(:c2s))
       cipher = keystore.cipher(:c2s)
       block_size = algorithm.block_size
@@ -68,8 +70,10 @@ module Nexop
     # @param keystore [Keystore] The keystore contains all
     #        encryption-relevant stuff (algorithms, keys, ...), which are
     #        used for encryption.
+    # @param sequence_number [Integer] Sequence number used for checking
+    #        data integrity (if enabled).
     # @return [String] A binary string, which contains the new packet.
-    def self.create(payload, keystore)
+    def self.create(payload, keystore, sequence_number)
       algorithm = EncryptionAlgorithm.from_s(keystore.encryption_algorithm(:s2c))
       block_size = algorithm.block_size
 
