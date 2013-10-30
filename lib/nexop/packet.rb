@@ -70,11 +70,14 @@ module Nexop
     #        used for encryption.
     # @return [String] A binary string, which contains the new packet.
     def self.create(payload, keystore)
-      length = ((payload.length + 5) / 8.0).ceil * 8
+      algorithm = EncryptionAlgorithm.from_s(keystore.encryption_algorithm(:s2c))
+      block_size = algorithm.block_size
+
+      length = ((payload.length + 5) / block_size.to_f).ceil * block_size
       padding_length = length - 5 - payload.length
 
       if padding_length < 4
-        length += 8
+        length += block_size
         padding_length = length - 5 - payload.length
       end
 
@@ -82,6 +85,8 @@ module Nexop
       data += [length - 4, padding_length].pack("NC")
       data += payload
       data += Array.new(padding_length, 0).pack("C*")
+
+      keystore.cipher(:s2c).update(data)
     end
   end
 end

@@ -80,19 +80,30 @@ describe Nexop::Packet do
   end
 
   context "create" do
-    it "creates a packet with empty payload" do
-      packet = Nexop::Packet.create("", keystore)
-      packet.unpack("C*").should == [0, 0, 0, 12, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    end
+    [ Nexop::EncryptionAlgorithm::DES, Nexop::EncryptionAlgorithm::NONE ].each do |algorithm|
+      it "creates a packet with empty payload for #{algorithm}" do
+        keystore.algorithms!(:c2s, algorithm, Nexop::MacAlgorithm::NONE)
+        keystore.algorithms!(:s2c, algorithm, Nexop::MacAlgorithm::NONE)
 
-    it "creates a packet with padding" do
-      packet = Nexop::Packet.create([1, 2, 3, 4, 5, 6].pack("C*"), keystore)
-      packet.unpack("C*").should == [0, 0, 0, 12, 5, 1, 2, 3, 4, 5, 6, 0, 0, 0, 0, 0]
-    end
+        packet = Nexop::Packet.create("", keystore)
+        decrypt(packet, keystore).unpack("C*").should == [0, 0, 0, 12, 11, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+      end
 
-    it "creates a packet a a calculated padding >= 4" do
-      packet = Nexop::Packet.create([1, 2, 3, 4, 5, 6, 7, 8].pack("C*"), keystore)
-      packet.unpack("C*").should == [0, 0, 0, 20, 11, 1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+      it "creates a packet with padding for #{algorithm}" do
+        keystore.algorithms!(:c2s, algorithm, Nexop::MacAlgorithm::NONE)
+        keystore.algorithms!(:s2c, algorithm, Nexop::MacAlgorithm::NONE)
+
+        packet = Nexop::Packet.create([1, 2, 3, 4, 5, 6].pack("C*"), keystore)
+        decrypt(packet, keystore).unpack("C*").should == [0, 0, 0, 12, 5, 1, 2, 3, 4, 5, 6, 0, 0, 0, 0, 0]
+      end
+
+      it "creates a packet a a calculated padding >= 4 for #{algorithm}" do
+        keystore.algorithms!(:c2s, algorithm, Nexop::MacAlgorithm::NONE)
+        keystore.algorithms!(:s2c, algorithm, Nexop::MacAlgorithm::NONE)
+
+        packet = Nexop::Packet.create([1, 2, 3, 4, 5, 6, 7, 8].pack("C*"), keystore)
+        decrypt(packet, keystore).unpack("C*").should == [0, 0, 0, 20, 11, 1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+      end
     end
   end
 end
