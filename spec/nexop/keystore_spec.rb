@@ -206,8 +206,8 @@ describe Nexop::Keystore do
 
   context "cipher" do
     [ :c2s, :s2c ].each do |direction|
-      it "returns nil by default for #{direction}" do
-        keystore.cipher(direction).should be_nil
+      it "returns the NullCipher by default for #{direction}" do
+        keystore.cipher(direction).should be_a_kind_of(Nexop::Keystore::NoneCipher)
       end
 
       it "returns a cipher when you have an encryption key for #{direction}" do
@@ -238,7 +238,7 @@ describe Nexop::Keystore do
         keystore.cipher(direction).should_not be_nil
 
         keystore.algorithms!(direction, Nexop::EncryptionAlgorithm::NONE, Nexop::MacAlgorithm::NONE)
-        keystore.cipher(direction).should be_nil
+        keystore.cipher(direction).should be_a_kind_of(Nexop::Keystore::NoneCipher)
       end
     end
 

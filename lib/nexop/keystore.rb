@@ -1,6 +1,29 @@
 module Nexop
   class Keystore
     ##
+    # A pseudo-cipher which does not make any encryption/decryption.
+    #
+    # The pseudo-cipher should behave exactly like a `OpenSSL::Cipher`.
+    # Rather than doing some encryption/decryption is returns the cipher-text
+    # (which is also the plain-text) again.
+    class NoneCipher
+      ##
+      # Simulation of the `OpenSSL::Cipher#update` method.
+      #
+      # If `buffer` is not `nil` then the `data` buffer is appended to
+      # `buffer`. Otherwise `data` is simply returned.
+      #
+      # @return [data, buffer]
+      def update(data, buffer = nil)
+        if buffer
+          buffer.concat(data)
+        else
+          data
+        end
+      end
+    end
+
+    ##
     # The exchange hash of the connection.
     #
     # The exchange-hash is used to create encryption keys and initialization
@@ -150,16 +173,21 @@ module Nexop
     #
     # The cipher is already prepared with the {#encryption_key} and the
     # {#initialization_vector}. When the encryption-algorithm is set to
-    # {EncryptionAlgorithm::NONE}, then no cipher is created and `nil` is
+    # {EncryptionAlgorithm::NONE}, then a pseudo-cipher ({NoneCipher}) is
     # returned.
     #
     # @param direction [:c2s, :s2c] Specifies the direction of the
     #        communication. Can be either _client to server_ (`:c2s`) or
     #        _server to client_ (:s2c).
-    # @return [OpenSSL::Cipher] The cipher-instance for the current
-    #         encryption-algorithm. When the {#encryption_algorithm} is set
-    #         to {EncryptionAlgorithm::NONE}, then `nil` is returned.
+    # @return [OpenSSL::Cipher, NoneCipher] The cipher-instance for the
+    #         current encryption-algorithm. When the {#encryption_algorithm}
+    #         is set to {EncryptionAlgorithm::NONE}, then an instance of
+    #         {NoneCipher} is returned.
     def cipher(direction)
+      if self.encryption_algorithm(direction) == EncryptionAlgorithm::NONE
+        return NoneCipher.new
+      end
+
       ek = self.encryption_key(direction)
       iv = self.initialization_vector(direction)
 
