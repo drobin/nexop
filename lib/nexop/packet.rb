@@ -27,13 +27,20 @@ module Nexop
     #                  `nil` if no packet is available.
     # @raise [ArgumentError] The input `data` could not be parsed
     def self.parse(data, keystore)
-      packet_length, padding_length = data.unpack("NC")
+      algorithm = EncryptionAlgorithm.from_s(keystore.encryption_algorithm(:c2s))
+      cipher = keystore.cipher(:c2s)
+      block_size = algorithm.block_size
+
+      return nil if data.size < block_size
+
+      plain = cipher.update(data[0, block_size]) # decrypt first block
+      packet_length, padding_length = plain.unpack("NC")
 
       return nil if packet_length.nil?
-      return nil if data.size < packet_length + 4
+      return nil if data.size < packet_length + 4 # not enough data available in input-buffer
 
-      if (packet_length + 4) % 8 != 0
-        raise ArgumentError, "invalid packet-size (#{packet_length + 4}), must be a multiple of 8"
+      if (packet_length + 4) % block_size != 0
+        raise ArgumentError, "invalid packet-size (#{packet_length + 4}), must be a multiple of #{block_size}"
       end
 
       if padding_length < 4
@@ -44,7 +51,8 @@ module Nexop
         raise ArgumentError, "padding-size (#{padding_length}) cannot be larger than packet_length - 1 (#{packet_length})"
       end
 
-      payload = data.byteslice(5, packet_length - padding_length - 1)
+      plain += cipher.update(data[block_size, packet_length + 4 - block_size]) # decrypt remaining data
+      payload = plain.byteslice(5, packet_length - padding_length - 1)
       data[0, packet_length + 4] = ""
 
       payload
