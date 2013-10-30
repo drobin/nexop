@@ -107,7 +107,7 @@ module Nexop
       end
 
       # parse as many packets as available in the input-buffer
-      while payload = Nexop::Packet.parse(@ibuf)
+      while payload = Nexop::Packet.parse(@ibuf, self.keystore)
         # tick per packet-payload: quit the session when tick_payload request it
         return false unless tick_payload(payload)
       end
@@ -147,7 +147,7 @@ module Nexop
     # @return [Session]
     # @see #obuf_write
     def packet_write(payload)
-      data = Packet.create(payload)
+      data = Packet.create(payload, self.keystore)
       obuf_write(data)
     end
 

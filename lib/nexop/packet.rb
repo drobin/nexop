@@ -20,10 +20,13 @@ module Nexop
     # returned and `data` is kept untouched.
     #
     # @param data [String] A binary string which contains the data to be parsed.
+    # @param keystore [Keystore] The keystore contains all
+    #        encryption-relevant stuff (algorithms, keys, ...), which are
+    #        used for decryption.
     # @return [String] A binary string contains the payload of the packet or
     #                  `nil` if no packet is available.
     # @raise [ArgumentError] The input `data` could not be parsed
-    def self.parse(data)
+    def self.parse(data, keystore)
       packet_length, padding_length = data.unpack("NC")
 
       return nil if packet_length.nil?
@@ -54,8 +57,11 @@ module Nexop
     #
     # @param payload [String] A binary string which contains the payload of the
     #                packet, which should be created by the method.
+    # @param keystore [Keystore] The keystore contains all
+    #        encryption-relevant stuff (algorithms, keys, ...), which are
+    #        used for encryption.
     # @return [String] A binary string, which contains the new packet.
-    def self.create(payload)
+    def self.create(payload, keystore)
       length = ((payload.length + 5) / 8.0).ceil * 8
       padding_length = length - 5 - payload.length
 
