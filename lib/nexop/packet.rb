@@ -29,9 +29,10 @@ module Nexop
     #                  `nil` if no packet is available.
     # @raise [ArgumentError] The input `data` could not be parsed
     def self.parse(data, keystore, sequence_number)
-      algorithm = EncryptionAlgorithm.from_s(keystore.encryption_algorithm(:c2s))
+      enc_spec = EncryptionAlgorithm.from_s(keystore.encryption_algorithm(:c2s))
+      mac_spec = MacAlgorithm.from_s(keystore.mac_algorithm(:c2s))
       cipher = keystore.cipher(:c2s)
-      block_size = algorithm.block_size
+      block_size = enc_spec.block_size
 
       return nil if data.size < block_size
 
@@ -39,7 +40,7 @@ module Nexop
       packet_length, padding_length = plain.unpack("NC")
 
       return nil if packet_length.nil?
-      return nil if data.size < packet_length + 4 # not enough data available in input-buffer
+      return nil if data.size < packet_length + 4 + mac_spec.digest_length # not enough data available in input-buffer
 
       if (packet_length + 4) % block_size != 0
         raise ArgumentError, "invalid packet-size (#{packet_length + 4}), must be a multiple of #{block_size}"
@@ -55,7 +56,19 @@ module Nexop
 
       plain += cipher.update(data[block_size, packet_length + 4 - block_size]) # decrypt remaining data
       payload = plain.byteslice(5, packet_length - padding_length - 1)
-      data[0, packet_length + 4] = ""
+
+      if keystore.mac_algorithm(:c2s) != MacAlgorithm::NONE
+        # MAC verification
+        hmac_in = [ sequence_number ].pack("N") + plain[0, packet_length + 4]
+        digest = OpenSSL::HMAC.digest(OpenSSL::Digest.new(mac_spec.digest_spec), keystore.integrity_key(:c2s), hmac_in)
+
+        if digest != data[packet_length + 4, mac_spec.digest_length]
+          raise ArgumentError, "mac verification failed"
+        end
+      end
+
+      # Remove data from input
+      data[0, packet_length + mac_spec.digest_length + 4] = ""
 
       payload
     end
