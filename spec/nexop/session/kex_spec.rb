@@ -1,8 +1,8 @@
 require 'spec_helper'
 
-describe Nexop::Kex do
+describe Nexop::Handler::Kex do
   let(:receiver) { double(:m => nil)}
-  let(:kex) { Nexop::Kex.new(receiver.method(:m)) }
+  let(:kex) { Nexop::Handler::Kex.new(receiver.method(:m)) }
   let(:hostkey) { Nexop::Hostkey.generate(1014) }
 
   context "kex_init" do

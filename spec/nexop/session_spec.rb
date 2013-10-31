@@ -65,7 +65,7 @@ describe Nexop::Session do
 
   context "kex" do
     it "is assigned by default" do
-      session.kex.should be_a_kind_of(Nexop::Kex)
+      session.kex.should be_a_kind_of(Nexop::Handler::Kex)
     end
   end
 
