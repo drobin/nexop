@@ -63,6 +63,12 @@ describe Nexop::Session do
     end
   end
 
+  context "kex" do
+    it "is assigned by default" do
+      session.kex.should be_a_kind_of(Nexop::Kex)
+    end
+  end
+
   context "kex phase" do
     before(:each) { session.instance_variable_set(:@server_identification, "foo") }
     before(:each) { session.instance_variable_set(:@client_identification, "bar") }
@@ -70,7 +76,7 @@ describe Nexop::Session do
 
     it "should stay in the kex-phase when the kex-handler returns true" do
       Nexop::Packet.should_receive(:parse).and_return("xxx", nil)
-      session.should_receive(:tick_kex).with("xxx").and_return(true)
+      session.kex.should_receive(:tick_kex).with("xxx").and_return(true)
 
       session.tick.should be_true
       session.instance_variable_get(:@phase).should == :kex
@@ -78,10 +84,17 @@ describe Nexop::Session do
 
     it "switches to the finished-phase when the kex-handler returns false" do
       Nexop::Packet.should_receive(:parse).and_return("xxx")
-      session.should_receive(:tick_kex).with("xxx").and_return(false)
+      session.kex.should_receive(:tick_kex).with("xxx").and_return(false)
 
       session.tick.should be_false
       session.instance_variable_get(:@phase).should == :finished
+    end
+
+    it "prepares the kex-handler" do
+      Nexop::Packet.should_receive(:parse).and_return("xxx", nil)
+      session.kex.should_receive(:tick_kex).with("xxx").and_return(true)
+      session.kex.should_receive(:prepare).with(session.hostkey, "bar", "foo")
+      session.tick
     end
   end
 end

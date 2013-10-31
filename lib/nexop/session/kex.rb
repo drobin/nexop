@@ -3,7 +3,7 @@ module Nexop
   # Module performs the kex-exchange for a SSH connection.
   #
   # @see http://tools.ietf.org/html/rfc4253#section-7
-  module Kex
+  class Kex < Handler::Base
     ##
     # Returns the {Message::KexInit} message for the requested direction.
     #
@@ -36,6 +36,21 @@ module Nexop
     end
 
     ##
+    # Prepares the handler with all information used by the
+    # protocol-handshake.
+    #
+    # @param hostkey [Hostkey] The hostkey
+    # @param v_c [String] client identification string
+    # @param v_s [String] server identification string
+    # @return [Kex]
+    def prepare(hostkey, v_c, v_s)
+      @hostkey = hostkey
+      @v_c = v_c
+      @v_s = v_s
+      self
+    end
+
+    ##
     # Session-tick implementation for the key-exchange.
     #
     # The method should be called by the session as long as `true` is
@@ -57,7 +72,7 @@ module Nexop
         s2c = kex_init(:s2c)
 
         receive_kex_init(c2s)
-        message_write(s2c)
+        send_message(s2c)
 
         @kex_step = @kex_step + 1
 
@@ -67,12 +82,12 @@ module Nexop
         dh_init = Message::KexdhInit.parse(payload)
 
         dh_reply = Message::KexdhReply.new
-        dh_reply.hostkey = self.hostkey
+        dh_reply.hostkey = @hostkey
         dh_reply.kex_algorithm = "diffie-hellman-group14-sha1"
         dh_reply.e = dh_init.e
-        dh_reply.calc_H(self.client_identification, self.server_identification, kex_init(:c2s).serialize, kex_init(:s2c).serialize)
+        dh_reply.calc_H(@v_c, @v_s, kex_init(:c2s).serialize, kex_init(:s2c).serialize)
 
-        message_write(dh_reply)
+        send_message(dh_reply)
 
         @kex_step = @kex_step + 1
 
@@ -80,7 +95,7 @@ module Nexop
       when 3
         # step 3: receive and send SSH_MSG_NEWKEYS
         msg = Message::NewKeys.parse(payload)
-        message_write(msg)
+        send_message(msg)
 
         false # nothing else to do, quit key exchange
       else

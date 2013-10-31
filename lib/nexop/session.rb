@@ -18,7 +18,6 @@ module Nexop
   #
   # Assign a {#hostkey} to the session before starting to {#tick} the session!
   class Session
-    include Kex
     include Log
 
     ##
@@ -52,6 +51,11 @@ module Nexop
     attr_reader :keystore
 
     ##
+    # The kex exchange module
+    # @return [Kex]
+    attr_reader :kex
+
+    ##
     # The identification string of the server.
     #
     # Assigned, when the string is send to the client.
@@ -73,6 +77,7 @@ module Nexop
       @ibuf = ""
       @obuf = ""
       @keystore = Keystore.new
+      @kex = Kex.new(self.method(:message_write))
       @seq_num = { :c2s => 0, :s2c => 0 }
     end
 
@@ -182,7 +187,8 @@ module Nexop
 
       case @phase
       when :kex
-        @phase = :finished unless tick_kex(payload)
+        kex.prepare(self.hostkey, self.client_identification, self.server_identification)
+        @phase = :finished unless kex.tick_kex(payload)
       else
         raise "Invalid phase: #{@phase}"
       end
