@@ -1,8 +1,9 @@
 require 'spec_helper'
 
 describe Nexop::Handler::Kex do
+  let(:keystore) { Nexop::Keystore.new }
   let(:receiver) { double(:m => nil)}
-  let(:kex) { Nexop::Handler::Kex.new(receiver.method(:m)) }
+  let(:kex) { Nexop::Handler::Kex.new(keystore, receiver.method(:m)) }
   let(:hostkey) { Nexop::Hostkey.generate(1014) }
 
   context "kex_init" do
@@ -142,7 +143,26 @@ describe Nexop::Handler::Kex do
     end
 
     context "step 3" do
+      let(:dh_reply) { Nexop::Message::KexdhReply.new }
+
+      before(:each) { kex.receive_kex_init(Nexop::Message::KexInit.new) }
+
+      before(:each) do
+        dh_reply.kex_algorithm = "diffie-hellman-group1-sha1"
+        dh_reply.e = 4711
+        dh_reply.hostkey = hostkey
+        dh_reply.calc_H("v_c", "v_s", "i_c", "i_s")
+      end
+
       before(:each) { kex.instance_variable_set(:@kex_step, 3) }
+      before(:each) { kex.instance_variable_set(:@dh_reply, dh_reply) }
+
+      [ :c2s, :s2c ].each do |direction|
+        before(:each) { kex.kex_init(direction).encryption_algorithms_client_to_server = [ "none"] }
+        before(:each) { kex.kex_init(direction).encryption_algorithms_server_to_client = [ "none"] }
+        before(:each) { kex.kex_init(direction).mac_algorithms_client_to_server = [ "none"] }
+        before(:each) { kex.kex_init(direction).mac_algorithms_server_to_client = [ "none"] }
+      end
 
       it "fails if you don't receive a SSH_MSG_NEWKEYS" do
         expect{ kex.tick_kex("xxx") }.to raise_error(ArgumentError)
@@ -152,6 +172,17 @@ describe Nexop::Handler::Kex do
         request = Nexop::Message::NewKeys.new
         receiver.should_receive(:m).with(request)
         kex.tick_kex(request.serialize).should be_false
+      end
+
+      it "assigns the keys to the keystore" do
+        keystore.should_receive(:keys!)
+        kex.tick_kex(Nexop::Message::NewKeys.new.serialize)
+      end
+
+      it "assigns the algorithms to the keystore" do
+        keystore.should_receive(:algorithms!).with(:c2s, "none", "none")
+        keystore.should_receive(:algorithms!).with(:s2c, "none", "none")
+        kex.tick_kex(Nexop::Message::NewKeys.new.serialize)
       end
     end
   end

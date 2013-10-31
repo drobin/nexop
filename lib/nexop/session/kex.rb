@@ -5,6 +5,13 @@ module Nexop
     #
     # @see http://tools.ietf.org/html/rfc4253#section-7
     class Kex < Handler::Base
+      include Log
+
+      def initialize(keystore, send_method)
+        super(send_method)
+        @keystore = keystore
+      end
+
       ##
       # Returns the {Message::KexInit} message for the requested direction.
       #
@@ -145,13 +152,13 @@ module Nexop
           # step 2: receive SSH_MSG_KEXDH_INIT and send back SSH_MSG_KEXDH_REPLY
           dh_init = Message::KexdhInit.parse(payload)
 
-          dh_reply = Message::KexdhReply.new
-          dh_reply.hostkey = @hostkey
-          dh_reply.kex_algorithm = "diffie-hellman-group14-sha1"
-          dh_reply.e = dh_init.e
-          dh_reply.calc_H(@v_c, @v_s, kex_init(:c2s).serialize, kex_init(:s2c).serialize)
+          @dh_reply = Message::KexdhReply.new
+          @dh_reply.hostkey = @hostkey
+          @dh_reply.kex_algorithm = "diffie-hellman-group14-sha1"
+          @dh_reply.e = dh_init.e
+          @dh_reply.calc_H(@v_c, @v_s, kex_init(:c2s).serialize, kex_init(:s2c).serialize)
 
-          send_message(dh_reply)
+          send_message(@dh_reply)
 
           @kex_step = @kex_step + 1
 
@@ -160,6 +167,17 @@ module Nexop
           # step 3: receive and send SSH_MSG_NEWKEYS
           msg = Message::NewKeys.parse(payload)
           send_message(msg)
+
+          @keystore.keys!(@dh_reply.exchange_hash, @dh_reply.shared_secret)
+
+          [ :c2s, :s2c ].each do |direction|
+            enc_alg = guess_encryption_algorithm(direction)
+            mac_alg = guess_mac_algorithm(direction)
+
+            log.debug("encryption_algorithm[#{direction}]: #{enc_alg}")
+            log.debug("mac_algorithm[#{direction}]: #{mac_alg}")
+            @keystore.algorithms!(direction, enc_alg, mac_alg)
+          end
 
           false # nothing else to do, quit key exchange
         else
