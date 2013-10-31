@@ -72,6 +72,7 @@ module Nexop
       @ibuf = ""
       @obuf = ""
       @keystore = Keystore.new
+      @seq_num = { :c2s => 0, :s2c => 0 }
     end
 
     ##
@@ -107,7 +108,9 @@ module Nexop
       end
 
       # parse as many packets as available in the input-buffer
-      while payload = Nexop::Packet.parse(@ibuf, self.keystore, 0)
+      while payload = Nexop::Packet.parse(@ibuf, self.keystore, @seq_num[:c2s])
+        @seq_num[:c2s] += 1
+
         # tick per packet-payload: quit the session when tick_payload request it
         return false unless tick_payload(payload)
       end
@@ -147,7 +150,8 @@ module Nexop
     # @return [Session]
     # @see #obuf_write
     def packet_write(payload)
-      data = Packet.create(payload, self.keystore)
+      data = Packet.create(payload, self.keystore, @seq_num[:s2c])
+      @seq_num[:s2c] += 1
       obuf_write(data)
     end
 
@@ -179,7 +183,7 @@ module Nexop
       when :kex
         @phase = :finished unless tick_kex(payload)
       else
-        raise "Invalid state: #{@state}"
+        raise "Invalid phase: #{@phase}"
       end
 
       @phase != :finished
