@@ -37,6 +37,25 @@ module Nexop
       end
 
       ##
+      # Guesses the {Message::KexInit#kex_algorithms kex algorithm} used by
+      # the session.
+      #
+      # @return [String] The kex algorithm which should be used by the
+      #         session.
+      def guess_kex_algorithm
+        c2s = kex_init(:c2s)
+        s2c = kex_init(:s2c)
+
+        if c2s.kex_algorithms.first == s2c.kex_algorithms.first
+          return c2s.kex_algorithms.first
+        end
+
+        c2s.kex_algorithms.select do |alg|
+          kex_init(:s2c).kex_algorithms.include?(alg)
+        end.first
+      end
+
+      ##
       # Prepares the handler with all information used by the
       # protocol-handshake.
       #

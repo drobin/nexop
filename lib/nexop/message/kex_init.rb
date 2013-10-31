@@ -3,6 +3,12 @@ class Nexop::Message::KexInit < Nexop::Message::Base
 
   add_field(:type, type: :byte, const: SSH_MSG_KEXINIT)
   add_field(:cookie, type: :byte_16, default: Array.new(16, 0))
+
+  ##
+  # @!attribute [r] kex_algorithms
+  # @return [Array] The key exchange method specifies how one-time session keys
+  #         are generated for encryption and for authentication, and how the
+  #         server  authentication is done.
   add_field(:kex_algorithms, type: :name_list, default: [])
   add_field(:server_host_key_algorithms, type: :name_list, default: [])
   add_field(:encryption_algorithms_client_to_server, type: :name_list, default: [])

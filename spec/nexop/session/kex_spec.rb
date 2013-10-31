@@ -42,6 +42,22 @@ describe Nexop::Handler::Kex do
     end
   end
 
+  context "guess_kex_algorithm" do
+    before(:each) { kex.receive_kex_init(Nexop::Message::KexInit.new) }
+
+    it "selects the preferred algorithm if both party have the same preferred algorithm" do
+      kex.kex_init(:c2s).kex_algorithms = [ "abc", "xxx" ]
+      kex.kex_init(:s2c).kex_algorithms = [ "abc", "yyy" ]
+      kex.guess_kex_algorithm.should == "abc"
+    end
+
+    it "selects the first client algorithm which the server also supports" do
+      kex.kex_init(:c2s).kex_algorithms = [ "abc", "xxx", "foo" ]
+      kex.kex_init(:s2c).kex_algorithms = [ "yyy", "bar", "xxx" ]
+      kex.guess_kex_algorithm.should == "xxx"
+    end
+  end
+
   context "prepare" do
     before(:each) { kex.prepare(hostkey, "V_C", "V_S") }
 
