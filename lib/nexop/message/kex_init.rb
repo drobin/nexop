@@ -11,7 +11,19 @@ class Nexop::Message::KexInit < Nexop::Message::Base
   #         server  authentication is done.
   add_field(:kex_algorithms, type: :name_list, default: [])
   add_field(:server_host_key_algorithms, type: :name_list, default: [])
+
+  ##
+  # @!attribute [r] encryption_algorithms_client_to_server
+  # @return [Array] A name-list of acceptable symmetric encryption algorithms
+  #         in order of preference to be used for the client to server
+  #         communication.
   add_field(:encryption_algorithms_client_to_server, type: :name_list, default: [])
+
+  ##
+  # @!attribute [r] encryption_algorithms_server_to_client
+  # @return [Array] A name-list of acceptable symmetric encryption algorithms
+  #         in order of preference to be used for the server to client
+  #         communication.
   add_field(:encryption_algorithms_server_to_client, type: :name_list, default: [])
   add_field(:mac_algorithms_client_to_server, type: :name_list, default: [])
   add_field(:mac_algorithms_server_to_client, type: :name_list, default: [])
