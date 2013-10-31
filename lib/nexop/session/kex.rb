@@ -78,6 +78,28 @@ module Nexop
       end
 
       ##
+      # Guesses the
+      # {Message::KexInit#mac_algorithms_client_to_server MAC algorithm} used
+      # by the session.
+      #
+      # @param direction [:c2s, :s2c] Specifies the direction of the
+      #        communication. Can be either _client to server_ (`:c2s`) or
+      #        _server to client_ (:s2c).
+      # @return [String] The MAC algorithm which should be used by the
+      #         session for the given `direction`.
+      def guess_mac_algorithm(direction)
+        method = case direction
+        when :c2s then :mac_algorithms_client_to_server
+        when :s2c then :mac_algorithms_server_to_client
+        else raise ArgumentError, "invalid direction: #{direction}"
+        end
+
+        kex_init(:c2s).send(method).select do |alg|
+          kex_init(:s2c).send(method).include?(alg)
+        end.first
+      end
+
+      ##
       # Prepares the handler with all information used by the
       # protocol-handshake.
       #

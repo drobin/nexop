@@ -74,6 +74,22 @@ describe Nexop::Handler::Kex do
     end
   end
 
+  context "guess_mac_algorithm" do
+    before(:each) { kex.receive_kex_init(Nexop::Message::KexInit.new) }
+
+    it "c2s selects the first client algorithm, the server also supports" do
+      kex.kex_init(:c2s).mac_algorithms_client_to_server = [ "abc", "xxx", "foo" ]
+      kex.kex_init(:s2c).mac_algorithms_client_to_server = [ "yyy", "bar", "xxx" ]
+      kex.guess_mac_algorithm(:c2s).should == "xxx"
+    end
+
+    it "s2c selects the first client algorithm, the server also supports" do
+      kex.kex_init(:c2s).mac_algorithms_server_to_client = [ "abc", "xxx", "foo" ]
+      kex.kex_init(:s2c).mac_algorithms_server_to_client = [ "yyy", "bar", "xxx" ]
+      kex.guess_mac_algorithm(:s2c).should == "xxx"
+    end
+  end
+
   context "prepare" do
     before(:each) { kex.prepare(hostkey, "V_C", "V_S") }
 

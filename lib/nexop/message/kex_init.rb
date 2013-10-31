@@ -25,7 +25,17 @@ class Nexop::Message::KexInit < Nexop::Message::Base
   #         in order of preference to be used for the server to client
   #         communication.
   add_field(:encryption_algorithms_server_to_client, type: :name_list, default: [])
+
+  ##
+  # @!attribute [r] mac_algorithms_client_to_server
+  # @return [Array] A name-list of acceptable MAC algorithms in order of
+  #         preference to be used for the client to server communication.
   add_field(:mac_algorithms_client_to_server, type: :name_list, default: [])
+
+  ##
+  # @!attribute [r] mac_algorithms_server_to_client
+  # @return [Array] A name-list of acceptable MAC algorithms in order of
+  #         preference to be used for the server to client communication.
   add_field(:mac_algorithms_server_to_client, type: :name_list, default: [])
   add_field(:compression_algorithms_client_to_server, type: :name_list, default: [])
   add_field(:compression_algorithms_server_to_client, type: :name_list, default: [])
