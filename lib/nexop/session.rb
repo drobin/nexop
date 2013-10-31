@@ -1,3 +1,4 @@
+require "nexop/session/handler"
 require "nexop/session/kex"
 
 module Nexop
