@@ -129,6 +129,9 @@ module Nexop
       end
 
       true # leave the session open
+    rescue SessionError => e
+      message_write(e.disconnect_message)
+      return false
     end
 
     ##

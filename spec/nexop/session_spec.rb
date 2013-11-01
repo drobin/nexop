@@ -75,6 +75,17 @@ describe Nexop::Session do
     end
   end
 
+  context "tick" do
+    before(:each) { session.instance_variable_set(:@server_identification, "foo") }
+    before(:each) { session.instance_variable_set(:@client_identification, "bar") }
+
+    it "returns false if a SessionError was generated" do
+      Nexop::Packet.should_receive(:parse).and_raise(Nexop::SessionError.new)
+      session.should_receive(:message_write).with(an_instance_of(Nexop::Message::Disconnect))
+      session.tick.should be_false
+    end
+  end
+
   context "kex phase" do
     before(:each) { session.instance_variable_set(:@server_identification, "foo") }
     before(:each) { session.instance_variable_set(:@client_identification, "bar") }
