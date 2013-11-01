@@ -82,12 +82,12 @@ describe Nexop::Session do
       session.instance_variable_get(:@phase).should == :kex
     end
 
-    it "switches to the finished-phase when the kex-handler returns false" do
-      Nexop::Packet.should_receive(:parse).and_return("xxx")
+    it "switches to the service-phase when the kex-handler returns false" do
+      Nexop::Packet.should_receive(:parse).and_return("xxx", nil)
       session.kex.should_receive(:tick_kex).with("xxx").and_return(false)
 
-      session.tick.should be_false
-      session.instance_variable_get(:@phase).should == :finished
+      session.tick.should be_true
+      session.instance_variable_get(:@phase).should == :service
     end
 
     it "prepares the kex-handler" do
@@ -95,6 +95,19 @@ describe Nexop::Session do
       session.kex.should_receive(:tick_kex).with("xxx").and_return(true)
       session.kex.should_receive(:prepare).with(session.hostkey, "bar", "foo")
       session.tick
+    end
+  end
+
+  context "service phase" do
+    before(:each) { session.instance_variable_set(:@server_identification, "foo") }
+    before(:each) { session.instance_variable_set(:@client_identification, "bar") }
+    before(:each) { session.instance_variable_set(:@phase, :service) }
+
+    it "switches to the finished-phase" do
+      Nexop::Packet.should_receive(:parse).and_return("xxx")
+
+      session.tick.should be_false
+      session.instance_variable_get(:@phase).should == :finished
     end
   end
 end
