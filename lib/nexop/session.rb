@@ -1,5 +1,6 @@
 require "nexop/session/handler"
 require "nexop/session/kex"
+require "nexop/session/service"
 
 module Nexop
   ##
@@ -56,6 +57,11 @@ module Nexop
     attr_reader :kex
 
     ##
+    # The service module
+    # @return [Service]
+    attr_reader :service
+
+    ##
     # The identification string of the server.
     #
     # Assigned, when the string is send to the client.
@@ -78,6 +84,7 @@ module Nexop
       @obuf = ""
       @keystore = Keystore.new
       @kex = Handler::Kex.new(@keystore, self.method(:message_write))
+      @service = Handler::Service.new(self.method(:message_write))
       @seq_num = { :c2s => 0, :s2c => 0 }
     end
 
@@ -190,7 +197,7 @@ module Nexop
         kex.prepare(self.hostkey, self.client_identification, self.server_identification)
         @phase = :service unless kex.tick_kex(payload)
       when :service
-        @phase = :finished
+        @phase = :finished unless service.tick(payload)
       else
         raise "Invalid phase: #{@phase}"
       end

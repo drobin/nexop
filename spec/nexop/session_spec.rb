@@ -69,6 +69,12 @@ describe Nexop::Session do
     end
   end
 
+  context "service" do
+    it "is assigned by default" do
+      session.service.should be_a_kind_of(Nexop::Handler::Service)
+    end
+  end
+
   context "kex phase" do
     before(:each) { session.instance_variable_set(:@server_identification, "foo") }
     before(:each) { session.instance_variable_set(:@client_identification, "bar") }
@@ -103,8 +109,9 @@ describe Nexop::Session do
     before(:each) { session.instance_variable_set(:@client_identification, "bar") }
     before(:each) { session.instance_variable_set(:@phase, :service) }
 
-    it "switches to the finished-phase" do
+    it "switches to the finished-phase when the service-handler returns false" do
       Nexop::Packet.should_receive(:parse).and_return("xxx")
+      session.service.should_receive(:tick).with("xxx").and_return(false)
 
       session.tick.should be_false
       session.instance_variable_get(:@phase).should == :finished
