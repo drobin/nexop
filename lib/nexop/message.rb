@@ -6,4 +6,4 @@ require 'nexop/message/kexdh_reply'
 require 'nexop/message/new_keys'
 require 'nexop/message/service_request'
 require 'nexop/message/service_accept'
-
+require 'nexop/message/disconnect'
