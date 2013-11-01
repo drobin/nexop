@@ -5,6 +5,8 @@ module Nexop
     #
     # @see http://tools.ietf.org/html/rfc4253#section-10
     class Service < Handler::Base
+      include Log
+
       ##
       # Services registered at the service-handler.
       #
@@ -14,6 +16,12 @@ module Nexop
       # @return [Array] Array containing all activated services of type
       #         {ServiceBase}.
       attr_reader :services
+
+      ##
+      # The currently active service.
+      #
+      # @return [ServiceBase]
+      attr_reader :current_service
 
       def initialize(send_method)
         super(send_method)
@@ -51,7 +59,25 @@ module Nexop
       #         returned, then the key exchange is complete and you can
       #         switch to the next session-state.
       def tick(payload)
-        false
+        if @current_service
+        else
+          request = Message::ServiceRequest.parse(payload)
+          log.debug("request for service '#{request.service_name}'")
+
+          @current_service = self.services.select{ |s| s.name == request.service_name }.first
+          if @current_service
+            log.debug("service '#{@current_service.name} available, selected'")
+            response = Message::ServiceAccept.new(:service_name => request.service_name)
+            send_message(response)
+            true
+          else
+            log.error("service '#{request.service_name}' not available, aborting")
+            raise DisconnectError.new(
+              Message::Disconnect::Reason::SERVICE_NOT_AVAILABLE,
+              "service '#{request.service_name}' not available"
+            )
+          end
+        end
       end
     end
   end
