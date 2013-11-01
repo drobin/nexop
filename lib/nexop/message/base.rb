@@ -66,6 +66,19 @@ module Nexop::Message
       end
     end
 
+    ##
+    # Creates a new message-instance.
+    #
+    # Values passed with the fields-hash are initial assigned to the instance.
+    #
+    # @param fields [Hash] Values to be assign to the message. The keys
+    #        represents the name of the fields.
+    def initialize(fields = {})
+      fields.each do |key, value|
+        self.field_set(key, value)
+      end
+    end
+
     def method_missing(method, *args)
       field_name = method.to_s
       field_name = field_name[0..-2] if field_name.end_with?("=")

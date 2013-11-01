@@ -109,6 +109,32 @@ describe Nexop::Message::Base do
     end
   end
 
+  context "initialize" do
+    it "assigns no values to the message" do
+      msg = klass.new
+      msg.f1.should be_nil
+      msg.f2.should == "xxx"
+      msg.f3.should == 4711
+      msg.f4.should == 666
+    end
+
+    it "assigns values to the message" do
+      msg = klass.new(:f1 => "111", :f2 => "222")
+      msg.f1.should == "111"
+      msg.f2.should == "222"
+      msg.f3.should == 4711
+      msg.f4.should == 666
+    end
+
+    it "rejects unknown fields" do
+      expect{ klass.new(:xxx => "abc") }.to raise_error(ArgumentError)
+    end
+
+    it "cannot change constant fields" do
+      expect{ klass.new(:f3 => "xxx") }.to raise_error(ArgumentError)
+    end
+  end
+
   context "parse" do
     it "creates a message" do
       Nexop::Message::IO.should_receive(:foo).and_return(["a", 1])
