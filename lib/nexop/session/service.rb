@@ -67,9 +67,7 @@ module Nexop
           @current_service = self.services.select{ |s| s.name == request.service_name }.first
           if @current_service
             log.debug("service '#{@current_service.name} available, selected'")
-            response = Message::ServiceAccept.new(:service_name => request.service_name)
-            send_message(response)
-            true
+            return Message::ServiceAccept.new(:service_name => request.service_name)
           else
             log.error("service '#{request.service_name}' not available, aborting")
             raise DisconnectError.new(

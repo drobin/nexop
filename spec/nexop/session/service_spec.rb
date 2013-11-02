@@ -36,13 +36,18 @@ describe Nexop::Handler::Service do
       before(:each) { handler.add_service(service) }
 
       it "receives a ServiceRequest and answers with a ServiceAccept" do
-        receiver.should_receive(:m).with(response)
-        handler.tick(request.serialize).should be_true
+        handler.tick(request.serialize).should == response
+        handler.should_not be_finished
       end
 
       it "updates the current_service" do
-        handler.tick(request.serialize).should be_true
+        handler.tick(request.serialize)
         handler.current_service.should equal(service)
+      end
+
+      it "does not update the finished-flag" do
+        handler.tick(request.serialize)
+        handler.should_not be_finished
       end
     end
 

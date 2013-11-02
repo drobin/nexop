@@ -123,9 +123,19 @@ describe Nexop::Session do
     before(:each) { session.instance_variable_set(:@client_identification, "bar") }
     before(:each) { session.instance_variable_set(:@phase, :service) }
 
-    it "switches to the finished-phase when the service-handler returns false" do
+    it "should stay in the service-phase when the service-handler is not finished" do
+      Nexop::Packet.should_receive(:parse).and_return("xxx", nil)
+      session.service.should_receive(:finished?).and_return(false)
+      session.service.should_receive(:tick).with("xxx")
+
+      session.tick.should be_true
+      session.instance_variable_get(:@phase).should == :service
+    end
+
+    it "switches to the finished-phase when the service-handler is finished" do
       Nexop::Packet.should_receive(:parse).and_return("xxx")
-      session.service.should_receive(:tick).with("xxx").and_return(false)
+      session.service.should_receive(:finished?).and_return(true)
+      session.service.should_receive(:tick).with("xxx")
 
       session.tick.should be_false
       session.instance_variable_get(:@phase).should == :finished

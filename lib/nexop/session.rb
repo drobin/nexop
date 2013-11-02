@@ -211,7 +211,18 @@ module Nexop
           @phase = :service
         end
       when :service
-        @phase = :finished unless service.tick(payload)
+        result = service.tick(payload)
+
+        if result.is_a?(Array)
+          result.each{ |msg| message_write(msg) }
+        elsif result.is_a?(Message::Base)
+          message_write(result)
+        end
+
+        if service.finished?
+          service.finalize
+          @phase = :finished
+        end
       else
         raise "Invalid phase: #{@phase}"
       end
