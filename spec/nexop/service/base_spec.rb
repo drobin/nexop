@@ -1,7 +1,7 @@
 require 'spec_helper'
 
-describe Nexop::ServiceBase do
-  let(:service) { Nexop::ServiceBase.new("foo") }
+describe Nexop::Service::Base do
+  let(:service) { Nexop::Service::Base.new("foo") }
 
   it "has a name" do
     service.name.should == "foo"

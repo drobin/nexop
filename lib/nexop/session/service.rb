@@ -18,13 +18,13 @@ module Nexop
       # handshake and can be started on the top on the session.
       #
       # @return [Array] Array containing all activated services of type
-      #         {ServiceBase}.
+      #         {Service::Base}.
       attr_reader :services
 
       ##
       # The currently active service.
       #
-      # @return [ServiceBase]
+      # @return [Service::Base]
       attr_reader :current_service
 
       ##
@@ -33,11 +33,11 @@ module Nexop
       # A registered service can be requested from the client and then be
       # started on the top of the session.
       #
-      # @param service [ServiceBase] The service-instance to register
+      # @param service [Service::Base] The service-instance to register
       # @raise [ArgumentError] if the `service`-class is not derivated from
-      #        {ServiceBase}.
+      #        {Service::Base}.
       def add_service(service)
-        if service.is_a?(Nexop::ServiceBase)
+        if service.is_a?(Nexop::Service::Base)
           @services << service
         else
           raise ArgumentError, "invalid service-class: #{service.class.name}"

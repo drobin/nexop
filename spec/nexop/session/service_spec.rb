@@ -17,7 +17,7 @@ describe Nexop::Handler::Service do
 
   context "add_service" do
     it "registers a new service" do
-      service = Nexop::ServiceBase.new("foo")
+      service = Nexop::Service::Base.new("foo")
       handler.add_service(service)
       handler.services.should == [ service ]
     end
@@ -29,7 +29,7 @@ describe Nexop::Handler::Service do
 
   context "tick" do
     context "service is available" do
-      let(:service) { Nexop::ServiceBase.new("foo") }
+      let(:service) { Nexop::Service::Base.new("foo") }
       let(:request) { Nexop::Message::ServiceRequest.new(:service_name => "foo") }
       let(:response) { Nexop::Message::ServiceAccept.new(:service_name => "foo") }
       before(:each) { handler.add_service(service) }
@@ -64,7 +64,7 @@ describe Nexop::Handler::Service do
     end
 
     context "service is activated" do
-      let(:service) { Nexop::ServiceBase.new("foo") }
+      let(:service) { Nexop::Service::Base.new("foo") }
       before(:each) { handler.add_service(service) }
       before(:each) { handler.instance_variable_set(:@current_service, service) }
       before(:each) { service.should_receive(:tick).with("xxx").and_return("abc") }

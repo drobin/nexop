@@ -9,7 +9,7 @@ require "nexop/keystore"
 require "nexop/packet"
 require "nexop/message"
 require "nexop/session"
-require "nexop/service"
+require "nexop/service/base"
 
 module Nexop
   # Your code goes here...
