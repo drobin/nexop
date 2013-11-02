@@ -1,11 +1,26 @@
 require 'spec_helper'
 
 describe Nexop::ServiceBase do
+  let(:service) { Nexop::ServiceBase.new("foo") }
+
   it "has a name" do
-    Nexop::ServiceBase.new("foo").name.should == "foo"
+    service.name.should == "foo"
   end
 
-  it "tick is not implemented" do
-    expect{ Nexop::ServiceBase.new("foo").tick(nil) }.to raise_error(NotImplementedError)
+  context "finished" do
+    it "is false by default" do
+      service.should_not be_finished
+    end
+
+    it "can be changed" do
+      service.send(:make_finish)
+      service.should be_finished
+    end
+  end
+
+  context "tick" do
+    it "must be implemented" do
+      expect{ service.tick(nil) }.to raise_error(NotImplementedError)
+    end
   end
 end
