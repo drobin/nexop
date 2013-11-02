@@ -198,7 +198,18 @@ module Nexop
       case @phase
       when :kex
         kex.prepare(self.hostkey, self.client_identification, self.server_identification)
-        @phase = :service unless kex.tick(payload)
+        result = kex.tick(payload)
+
+        if result.is_a?(Array)
+          result.each{ |msg| message_write(msg) }
+        elsif result.is_a?(Message::Base)
+          message_write(result)
+        end
+
+        if kex.finished?
+          kex.finalize
+          @phase = :service
+        end
       when :service
         @phase = :finished unless service.tick(payload)
       else

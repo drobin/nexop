@@ -121,18 +121,6 @@ module Nexop
         self
       end
 
-      ##
-      # Session-tick implementation for the key-exchange.
-      #
-      # The method should be called by the session as long as `true` is
-      # returned.
-      #
-      # @param payload [String] A binary string contains the payload of a
-      #        packet.
-      # @return [Boolean] As long as `true` is returned, the key exchange is
-      #         still active and the method should be called again. If `false`
-      #         is returned, then the key exchange is complete and you can
-      #         switch to the next session-state.
       def tick(payload)
         @kex_step ||= 1
 
@@ -143,11 +131,9 @@ module Nexop
           s2c = kex_init(:s2c)
 
           receive_kex_init(c2s)
-          send_message(s2c)
+          @kex_step = @kex_step + 1 # advance to next step
 
-          @kex_step = @kex_step + 1
-
-          true # continue with key exchange
+          return s2c
         when 2
           # step 2: receive SSH_MSG_KEXDH_INIT and send back SSH_MSG_KEXDH_REPLY
           dh_init = Message::KexdhInit.parse(payload)
@@ -158,31 +144,28 @@ module Nexop
           @dh_reply.e = dh_init.e
           @dh_reply.calc_H(@v_c, @v_s, kex_init(:c2s).serialize, kex_init(:s2c).serialize)
 
-          send_message(@dh_reply)
+          @kex_step = @kex_step + 1 # advance to the next step
 
-          @kex_step = @kex_step + 1
-
-          true # continue with the key exchange
+         return @dh_reply
         when 3
           # step 3: receive and send SSH_MSG_NEWKEYS
           msg = Message::NewKeys.parse(payload)
-          send_message(msg)
+          make_finish
 
-          @keystore.keys!(@dh_reply.exchange_hash, @dh_reply.shared_secret)
+          return msg
+        end
+      end
 
-          [ :c2s, :s2c ].each do |direction|
-            enc_alg = guess_encryption_algorithm(direction)
-            mac_alg = guess_mac_algorithm(direction)
+      def finalize
+        @keystore.keys!(@dh_reply.exchange_hash, @dh_reply.shared_secret)
 
-            log.debug("encryption_algorithm[#{direction}]: #{enc_alg}")
-            log.debug("mac_algorithm[#{direction}]: #{mac_alg}")
-            @keystore.algorithms!(direction, enc_alg, mac_alg)
-          end
+        [ :c2s, :s2c ].each do |direction|
+          enc_alg = guess_encryption_algorithm(direction)
+          mac_alg = guess_mac_algorithm(direction)
 
-          false # nothing else to do, quit key exchange
-        else
-          # nothing else to do, quit key exchange
-          false
+          log.debug("encryption_algorithm[#{direction}]: #{enc_alg}")
+          log.debug("mac_algorithm[#{direction}]: #{mac_alg}")
+          @keystore.algorithms!(direction, enc_alg, mac_alg)
         end
       end
 

@@ -109,20 +109,26 @@ describe Nexop::Handler::Kex do
 
   context "tick" do
     context "step 1" do
+      let(:c2s) { Nexop::Message::KexInit.new }
+
       it "fails if you don't receive a SSH_MSG_KEXINIT" do
         expect{ kex.tick("xxx") }.to raise_error(ArgumentError)
         kex.kex_init(:c2s).should be_nil
       end
 
       it "receives and sends back a SSH_MSG_KEXINIT" do
-        c2s = Nexop::Message::KexInit.new
-        receiver.should_receive(:m).with(kex.kex_init(:s2c))
-        kex.tick(c2s.serialize).should be_true
+        kex.tick(c2s.serialize).should equal(kex.kex_init(:s2c))
         kex.kex_init(:c2s).should == c2s
+      end
+
+      it "does not set the finished-flag" do
+        kex.tick(c2s.serialize)
+        kex.should_not be_finished
       end
     end
 
     context "step 2" do
+      let(:dh_init) { Nexop::Message::KexdhInit.new(:e => 4711) }
       before(:each) { kex.instance_variable_set(:@kex_step, 2) }
       before(:each) { kex.prepare(hostkey, "V_C", "V_S") }
       before(:each) { kex.receive_kex_init(Nexop::Message::KexInit.new) }
@@ -132,20 +138,35 @@ describe Nexop::Handler::Kex do
       end
 
       it "receives SSH_MSG_KEXDH_INIT and send back SSH_MSG_KEXDH_REPLY" do
-        request = Nexop::Message::KexdhInit.new
-        request.e = 4711
-        receiver.should_receive(:m) do |msg|
-          msg.should be_a_kind_of(Nexop::Message::KexdhReply)
-        end
+        kex.tick(dh_init.serialize).should be_an_instance_of(Nexop::Message::KexdhReply)
+      end
 
-        kex.tick(request.serialize).should be_true
+      it "does not set the finished-flag" do
+        kex.tick(dh_init.serialize)
+        kex.should_not be_finished
       end
     end
 
     context "step 3" do
-      let(:dh_reply) { Nexop::Message::KexdhReply.new }
+      let(:new_keys) { request = Nexop::Message::NewKeys.new }
+      before(:each) { kex.instance_variable_set(:@kex_step, 3) }
 
-      before(:each) { kex.receive_kex_init(Nexop::Message::KexInit.new) }
+      it "fails if you don't receive a SSH_MSG_NEWKEYS" do
+        expect{ kex.tick("xxx") }.to raise_error(ArgumentError)
+      end
+
+      it "receives and sends back SSH_MSG_NEWKEYS" do
+        kex.tick(new_keys.serialize).should be_an_instance_of(Nexop::Message::NewKeys)
+      end
+
+      it "updates the finished-flag" do
+        kex.tick(new_keys.serialize)
+        kex.should be_finished
+      end
+    end
+
+    context "finalize" do
+      let(:dh_reply) { Nexop::Message::KexdhReply.new }
 
       before(:each) do
         dh_reply.kex_algorithm = "diffie-hellman-group1-sha1"
@@ -154,7 +175,7 @@ describe Nexop::Handler::Kex do
         dh_reply.calc_H("v_c", "v_s", "i_c", "i_s")
       end
 
-      before(:each) { kex.instance_variable_set(:@kex_step, 3) }
+      before(:each) { kex.receive_kex_init(Nexop::Message::KexInit.new) }
       before(:each) { kex.instance_variable_set(:@dh_reply, dh_reply) }
 
       [ :c2s, :s2c ].each do |direction|
@@ -164,25 +185,15 @@ describe Nexop::Handler::Kex do
         before(:each) { kex.kex_init(direction).mac_algorithms_server_to_client = [ "none"] }
       end
 
-      it "fails if you don't receive a SSH_MSG_NEWKEYS" do
-        expect{ kex.tick("xxx") }.to raise_error(ArgumentError)
-      end
-
-      it "receives and sends back SSH_MSG_NEWKEYS" do
-        request = Nexop::Message::NewKeys.new
-        receiver.should_receive(:m).with(request)
-        kex.tick(request.serialize).should be_false
-      end
-
       it "assigns the keys to the keystore" do
         keystore.should_receive(:keys!)
-        kex.tick(Nexop::Message::NewKeys.new.serialize)
+        kex.finalize
       end
 
       it "assigns the algorithms to the keystore" do
         keystore.should_receive(:algorithms!).with(:c2s, "none", "none")
         keystore.should_receive(:algorithms!).with(:s2c, "none", "none")
-        kex.tick(Nexop::Message::NewKeys.new.serialize)
+        kex.finalize
       end
     end
   end
