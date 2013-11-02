@@ -124,6 +124,9 @@ module Nexop
       while payload = Nexop::Packet.parse(@ibuf, self.keystore, @seq_num[:c2s])
         @seq_num[:c2s] += 1
 
+        # tick general messages, which can be ignored
+        next if tick_ignore(payload)
+
         # tick per packet-payload: quit the session when tick_payload request it
         return false unless tick_payload(payload)
       end
@@ -188,6 +191,11 @@ module Nexop
     end
 
     private
+
+    def tick_ignore(payload)
+      Message::Base.is_msg?(Message::Ignore::SSH_MSG_IGNORE, payload) ||
+      Message::Base.is_msg?(Message::Debug::SSH_MSG_DEBUG, payload)
+    end
 
     ##
     # A single tick consuming the given `payload`.

@@ -84,6 +84,18 @@ describe Nexop::Session do
       session.should_receive(:message_write).with(an_instance_of(Nexop::Message::Disconnect))
       session.tick.should be_false
     end
+
+    it "skips (ignores) a debug-message" do
+      debug = Nexop::Message::Debug.new(:message => "xxx")
+      Nexop::Packet.should_receive(:parse).and_return(debug.serialize, nil)
+      session.tick.should be_true
+    end
+
+    it "skips (ignores) an ignore-message" do
+      ignore = Nexop::Message::Ignore.new
+      Nexop::Packet.should_receive(:parse).and_return(ignore.serialize, nil)
+      session.tick.should be_true
+    end
   end
 
   context "kex phase" do
