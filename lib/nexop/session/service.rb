@@ -58,6 +58,9 @@ module Nexop
       #         switch to the next session-state.
       def tick(payload)
         if @current_service
+          result = @current_service.tick(payload)
+          make_finish if @current_service.finished?
+          result
         else
           request = Message::ServiceRequest.parse(payload)
           log.debug("request for service '#{request.service_name}'")

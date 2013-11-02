@@ -62,5 +62,22 @@ describe Nexop::Handler::Service do
         handler.current_service.should be_nil
       end
     end
+
+    context "service is activated" do
+      let(:service) { Nexop::ServiceBase.new("foo") }
+      before(:each) { handler.add_service(service) }
+      before(:each) { handler.instance_variable_set(:@current_service, service) }
+      before(:each) { service.should_receive(:tick).with("xxx").and_return("abc") }
+      before(:each) { service.should_receive(:finished?).and_return(true) }
+
+      it "returns the value of the active service" do
+        handler.tick("xxx").should == "abc"
+      end
+
+      it "updates the finish state if the service is finished" do
+        handler.tick("xxx")
+        handler.should be_finished
+      end
+    end
   end
 end
