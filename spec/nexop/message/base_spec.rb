@@ -7,6 +7,7 @@ describe Nexop::Message::Base do
       add_field(:f2, :type => :bar, :default => "xxx")
       add_field(:f3, :type => :dingens, :const => 4711)
       add_field(:f4, :type => :bummens) { 666 }
+      add_field(:f5, :type => :bla, :if => Proc.new{ |msg| msg.f2 != "xxx" })
     end
   end
 
@@ -47,13 +48,13 @@ describe Nexop::Message::Base do
     end
 
     it "has some fields" do
-      klass.fields.should == [:f1, :f2, :f3, :f4]
+      klass.fields.should == [:f1, :f2, :f3, :f4, :f5]
     end
 
     it "has a field" do
-      klass.field(:f1).should == { :name => :f1, :type => :foo, :default => nil }
-      klass.field("f2").should == { :name => :f2, :type => :bar, :default => "xxx" }
-      klass.field(:f3).should == { :name => :f3, :type => :dingens, :const => 4711 }
+      klass.field(:f1).should == { :name => :f1, :type => :foo, :default => nil, :if => nil }
+      klass.field("f2").should == { :name => :f2, :type => :bar, :default => "xxx", :if => nil }
+      klass.field(:f3).should == { :name => :f3, :type => :dingens, :const => 4711, :if => nil }
     end
   end
 
@@ -141,12 +142,28 @@ describe Nexop::Message::Base do
       Nexop::Message::IO.should_receive(:bar).and_return(["b", 1])
       Nexop::Message::IO.should_receive(:dingens).and_return([4711, 1])
       Nexop::Message::IO.should_receive(:bummens).and_return([666, 1])
-      obj = klass.parse([1, 2, 3, 4].pack("C*"))
+      Nexop::Message::IO.should_receive(:bla).and_return(["bla", 1])
+      obj = klass.parse([1, 2, 3, 4, 5].pack("C*"))
       obj.should be_a_kind_of(klass)
       obj.f1.should == "a"
       obj.f2.should == "b"
       obj.f3.should == 4711
       obj.f4.should == 666
+      obj.f5.should == "bla"
+    end
+
+    it "skips a non-matching conditional field" do
+      Nexop::Message::IO.should_receive(:foo).and_return(["a", 1])
+      Nexop::Message::IO.should_receive(:bar).and_return(["xxx", 1])
+      Nexop::Message::IO.should_receive(:dingens).and_return([4711, 1])
+      Nexop::Message::IO.should_receive(:bummens).and_return([666, 1])
+      obj = klass.parse([1, 2, 3, 4].pack("C*"))
+      obj.should be_a_kind_of(klass)
+      obj.f1.should == "a"
+      obj.f2.should == "xxx"
+      obj.f3.should == 4711
+      obj.f4.should == 666
+      obj.f5.should be_nil
     end
 
     it "should pass the buffer and the offset to the IO-method" do
@@ -155,6 +172,7 @@ describe Nexop::Message::Base do
       Nexop::Message::IO.should_receive(:bar).with(:decode, data, 1).and_return(["b", 1])
       Nexop::Message::IO.should_receive(:dingens).with(:decode, data, 2).and_return([4711, 1])
       Nexop::Message::IO.should_receive(:bummens).with(:decode, data, 3).and_return([666, 1])
+      Nexop::Message::IO.should_receive(:bla).with(:decode, data, 4).and_return(["bla", 1])
       klass.parse(data)
     end
 
@@ -180,6 +198,17 @@ describe Nexop::Message::Base do
 
   context "serialize" do
     it "serializes a message" do
+      obj.f2 = "f2"
+      Nexop::Message::IO.should_receive(:foo).and_return("a")
+      Nexop::Message::IO.should_receive(:bar).and_return("b")
+      Nexop::Message::IO.should_receive(:dingens).and_return("c")
+      Nexop::Message::IO.should_receive(:bummens).and_return("d")
+      Nexop::Message::IO.should_receive(:bla).and_return("e")
+      obj.serialize.should == "abcde"
+    end
+
+    it "does not serialize a non-matching conditional field" do
+      obj.f2 = "xxx"
       Nexop::Message::IO.should_receive(:foo).and_return("a")
       Nexop::Message::IO.should_receive(:bar).and_return("b")
       Nexop::Message::IO.should_receive(:dingens).and_return("c")
@@ -190,10 +219,12 @@ describe Nexop::Message::Base do
     it "should pass the correct arguments to the IO-methods" do
       obj.f1 = "a"
       obj.f2 = "b"
+      obj.f5 = "bla"
       Nexop::Message::IO.should_receive(:foo).with(:encode, "a").and_return("")
       Nexop::Message::IO.should_receive(:bar).with(:encode, "b").and_return("")
       Nexop::Message::IO.should_receive(:dingens).with(:encode, 4711).and_return("")
       Nexop::Message::IO.should_receive(:bummens).with(:encode, 666).and_return("")
+      Nexop::Message::IO.should_receive(:bla).with(:encode, "bla").and_return("")
       obj.serialize
     end
 

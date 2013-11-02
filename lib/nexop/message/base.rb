@@ -29,6 +29,11 @@ module Nexop::Message
     # constant field, but the new value must equals to the value specified with
     # the `:const`-option. The `==` operator is used for comparison.
     #
+    # The `:if`-option specifies a condition, if the field should be
+    # {.parse parsed} and {#serialize serialized}. When the assigned `Proc`
+    # evaluates to `true`, then the field will be parsed and serialized. The
+    # `Proc` gets passed the (partial) message.
+    #
     # Passing a `blk` to the method has the same affect than passing a
     # `Proc`-instance to the `:const`-option: The field becomes constant and
     # the block is evaluated everytime the field is {#field_get accessed}.
@@ -38,7 +43,7 @@ module Nexop::Message
     #     class MyMessage < Nexop::Message::Base
     #       attr_accessor :num
     #
-    #       # Defines a constant field with the name "type" of type "uint8" with the value `5`
+    #       # Defines a constant field with the name "type" of type "uint8" with the value 5
     #       add_field :type, type: :uint8, const: 5
     #
     #       # Defines a field with the name "length" of type "uint32" and a default-value of 45
@@ -48,6 +53,9 @@ module Nexop::Message
     #       add_field(:name, type: :string) do |msg|
     #         msg.num && msg.num.odd? ? "odd number" : "even number"
     #       end
+    #
+    #       # Defines a field, which is only valid, when the length-field has the value 2
+    #       add_field(:cond, type: :string, if: Proc.new{ |msg| msg.length == 2 })
     #     end
     def self.add_field(name, options = {}, &blk)
       raise "#{name}: already assigned" if fields.include?(name)
@@ -60,9 +68,9 @@ module Nexop::Message
       options[:const] = blk if blk
 
       if !options.key?(:const)
-        @fields << { :name => name.to_sym, :type => options[:type].to_sym, :default => options[:default] }
+        @fields << { :name => name.to_sym, :type => options[:type].to_sym, :default => options[:default], :if => options[:if] }
       else
-        @fields << { :name => name.to_sym, :type => options[:type].to_sym, :const => options[:const] }
+        @fields << { :name => name.to_sym, :type => options[:type].to_sym, :const => options[:const], :if => options[:if] }
       end
     end
 
@@ -180,9 +188,13 @@ module Nexop::Message
 
       bytes = fields.inject(0) do |a, e|
         meta = field(e)
-        val, nbytes = Nexop::Message::IO.send(meta[:type], :decode, data, a)
-        msg.field_set(meta[:name], val)
-        a + nbytes
+        if meta[:if].nil? || meta[:if].call(msg)
+          val, nbytes = Nexop::Message::IO.send(meta[:type], :decode, data, a)
+          msg.field_set(meta[:name], val)
+          a + nbytes
+        else
+          a
+        end
       end
 
       raise ArgumentError, "bffer underflow" if bytes < data.size
@@ -200,7 +212,10 @@ module Nexop::Message
     def serialize
       self.class.fields.inject("") do |a, e|
         meta = self.class.field(e)
-        a += Nexop::Message::IO.send(meta[:type], :encode, self.field_get(e))
+        if meta[:if].nil? || meta[:if].call(self)
+          a += Nexop::Message::IO.send(meta[:type], :encode, self.field_get(e))
+        end
+        a
       end
     end
 
