@@ -198,7 +198,7 @@ module Nexop
       case @phase
       when :kex
         kex.prepare(self.hostkey, self.client_identification, self.server_identification)
-        @phase = :service unless kex.tick_kex(payload)
+        @phase = :service unless kex.tick(payload)
       when :service
         @phase = :finished unless service.tick(payload)
       else

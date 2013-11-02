@@ -133,7 +133,7 @@ module Nexop
       #         still active and the method should be called again. If `false`
       #         is returned, then the key exchange is complete and you can
       #         switch to the next session-state.
-      def tick_kex(payload)
+      def tick(payload)
         @kex_step ||= 1
 
         case @kex_step

@@ -107,17 +107,17 @@ describe Nexop::Handler::Kex do
     end
   end
 
-  context "tick_kex" do
+  context "tick" do
     context "step 1" do
       it "fails if you don't receive a SSH_MSG_KEXINIT" do
-        expect{ kex.tick_kex("xxx") }.to raise_error(ArgumentError)
+        expect{ kex.tick("xxx") }.to raise_error(ArgumentError)
         kex.kex_init(:c2s).should be_nil
       end
 
       it "receives and sends back a SSH_MSG_KEXINIT" do
         c2s = Nexop::Message::KexInit.new
         receiver.should_receive(:m).with(kex.kex_init(:s2c))
-        kex.tick_kex(c2s.serialize).should be_true
+        kex.tick(c2s.serialize).should be_true
         kex.kex_init(:c2s).should == c2s
       end
     end
@@ -128,7 +128,7 @@ describe Nexop::Handler::Kex do
       before(:each) { kex.receive_kex_init(Nexop::Message::KexInit.new) }
 
       it "fails of you don't receive a SSH_MSG_KEXDH_INIT" do
-        expect{ kex.tick_kex("xxx") }.to raise_error(ArgumentError)
+        expect{ kex.tick("xxx") }.to raise_error(ArgumentError)
       end
 
       it "receives SSH_MSG_KEXDH_INIT and send back SSH_MSG_KEXDH_REPLY" do
@@ -138,7 +138,7 @@ describe Nexop::Handler::Kex do
           msg.should be_a_kind_of(Nexop::Message::KexdhReply)
         end
 
-        kex.tick_kex(request.serialize).should be_true
+        kex.tick(request.serialize).should be_true
       end
     end
 
@@ -165,24 +165,24 @@ describe Nexop::Handler::Kex do
       end
 
       it "fails if you don't receive a SSH_MSG_NEWKEYS" do
-        expect{ kex.tick_kex("xxx") }.to raise_error(ArgumentError)
+        expect{ kex.tick("xxx") }.to raise_error(ArgumentError)
       end
 
       it "receives and sends back SSH_MSG_NEWKEYS" do
         request = Nexop::Message::NewKeys.new
         receiver.should_receive(:m).with(request)
-        kex.tick_kex(request.serialize).should be_false
+        kex.tick(request.serialize).should be_false
       end
 
       it "assigns the keys to the keystore" do
         keystore.should_receive(:keys!)
-        kex.tick_kex(Nexop::Message::NewKeys.new.serialize)
+        kex.tick(Nexop::Message::NewKeys.new.serialize)
       end
 
       it "assigns the algorithms to the keystore" do
         keystore.should_receive(:algorithms!).with(:c2s, "none", "none")
         keystore.should_receive(:algorithms!).with(:s2c, "none", "none")
-        kex.tick_kex(Nexop::Message::NewKeys.new.serialize)
+        kex.tick(Nexop::Message::NewKeys.new.serialize)
       end
     end
   end
