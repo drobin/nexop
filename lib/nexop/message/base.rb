@@ -203,6 +203,19 @@ module Nexop::Message
     end
 
     ##
+    # Tests whether the given `payload` contains a message of the given
+    # `msg_type`.
+    #
+    # @param msg_type [Integer] The 8-bit message type as defined in the
+    #        SSH protocol specifications.
+    # @param payload [String] The payload to test
+    # @return [Boolean] If the `payload` contains the message, then `true` is
+    #         returned, `false` othwise.
+    def self.is_msg?(msg_type, payload)
+      payload && payload.unpack("C").first == msg_type
+    end
+
+    ##
     # Serializes the message into a raw-data representation.
     #
     # The resulting data can be assigned to a packet.

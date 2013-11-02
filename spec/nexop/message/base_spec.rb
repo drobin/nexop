@@ -234,6 +234,24 @@ describe Nexop::Message::Base do
     end
   end
 
+  context "is_msg?" do
+    it "fails for an empty payload" do
+      Nexop::Message::Base.is_msg?(5, "").should be_false
+    end
+
+    it "fails for an nil payload" do
+      Nexop::Message::Base.is_msg?(5, nil).should be_false
+    end
+
+    it "fails for an invalid payload" do
+      Nexop::Message::Base.is_msg?(5, [ 1, 2, 3].pack("C*")).should be_false
+    end
+
+    it "succeeds" do
+      Nexop::Message::Base.is_msg?(5, [5, 1, 2, 3].pack("C*")).should be_true
+    end
+  end
+
   context "==" do
     it "fails if the classes are different" do
       obj.should_not == Object.new
