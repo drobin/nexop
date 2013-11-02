@@ -7,8 +7,7 @@ module Nexop
     class Kex < Handler::Base
       include Log
 
-      def initialize(keystore, send_method)
-        super(send_method)
+      def initialize(keystore)
         @keystore = keystore
       end
 

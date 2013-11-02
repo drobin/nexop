@@ -7,6 +7,10 @@ module Nexop
     class Service < Handler::Base
       include Log
 
+      def initialize
+        @services = []
+      end
+
       ##
       # Services registered at the service-handler.
       #
@@ -22,12 +26,6 @@ module Nexop
       #
       # @return [ServiceBase]
       attr_reader :current_service
-
-      def initialize(send_method)
-        super(send_method)
-
-        @services = []
-      end
 
       ##
       # Registers a service on the service-handler.

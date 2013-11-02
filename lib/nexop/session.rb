@@ -83,8 +83,8 @@ module Nexop
       @ibuf = ""
       @obuf = ""
       @keystore = Keystore.new
-      @kex = Handler::Kex.new(@keystore, self.method(:message_write))
-      @service = Handler::Service.new(self.method(:message_write))
+      @kex = Handler::Kex.new(@keystore)
+      @service = Handler::Service.new
       @seq_num = { :c2s => 0, :s2c => 0 }
     end
 

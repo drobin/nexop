@@ -1,8 +1,7 @@
 require 'spec_helper'
 
 describe Nexop::Handler::Service do
-  let(:receiver) { double(:m => nil)}
-  let(:handler) { Nexop::Handler::Service.new(receiver.method(:m)) }
+  let(:handler) { Nexop::Handler::Service.new }
 
   context "services" do
     it "is empty by default" do
