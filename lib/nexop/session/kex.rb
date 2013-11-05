@@ -129,13 +129,31 @@ module Nexop
           c2s = Message::KexInit.parse(payload)
           s2c = kex_init(:s2c)
 
+          log.debug("KexInit received")
+
           receive_kex_init(c2s)
           @kex_step = @kex_step + 1 # advance to next step
+
+          log.debug("KexInit send")
+
+          [ :c2s, :s2c ].each do |direction|
+            log.debug("kex_init[#{direction}].kex_algorithms = #{kex_init(direction).kex_algorithms.join(',')}")
+            log.debug("kex_init[#{direction}].server_host_key_algorithms = #{kex_init(direction).server_host_key_algorithms.join(',')}")
+            log.debug("kex_init[#{direction}].encryption_algorithms_client_to_server = #{kex_init(direction).encryption_algorithms_client_to_server.join(',')}")
+            log.debug("kex_init[#{direction}].encryption_algorithms_server_to_client = #{kex_init(direction).encryption_algorithms_server_to_client.join(',')}")
+            log.debug("kex_init[#{direction}].mac_algorithms_client_to_server = #{kex_init(direction).mac_algorithms_client_to_server.join(',')}")
+            log.debug("kex_init[#{direction}].mac_algorithms_server_to_client = #{kex_init(direction).mac_algorithms_server_to_client.join(',')}")
+            log.debug("kex_init[#{direction}].compression_algorithms_client_to_server = #{kex_init(direction).compression_algorithms_client_to_server.join(',')}")
+            log.debug("kex_init[#{direction}].compression_algorithms_server_to_client = #{kex_init(direction).compression_algorithms_server_to_client.join(',')}")
+            log.debug("kex_init[#{direction}].languages_client_to_server = #{kex_init(direction).languages_client_to_server.join(',')}")
+            log.debug("kex_init[#{direction}].languages_server_to_client = #{kex_init(direction).languages_server_to_client.join(',')}")
+          end
 
           return s2c
         when 2
           # step 2: receive SSH_MSG_KEXDH_INIT and send back SSH_MSG_KEXDH_REPLY
           dh_init = Message::KexdhInit.parse(payload)
+          log.debug("KexdhInit received")
 
           @dh_reply = Message::KexdhReply.new
           @dh_reply.hostkey = @hostkey
@@ -145,19 +163,26 @@ module Nexop
 
           @kex_step = @kex_step + 1 # advance to the next step
 
+          log.debug("KexdhReply send")
+
          return @dh_reply
         when 3
           # step 3: receive and send SSH_MSG_NEWKEYS
           msg = Message::NewKeys.parse(payload)
           make_finish
 
+          log.debug("NewKeys received")
+          log.debug("NewKeys send")
+
           return msg
         end
       end
 
       def finalize
+        log.debug("activating keys for session")
         @keystore.keys!(@dh_reply.exchange_hash, @dh_reply.shared_secret)
 
+        log.debug("activating algorithms for session")
         [ :c2s, :s2c ].each do |direction|
           enc_alg = guess_encryption_algorithm(direction)
           mac_alg = guess_mac_algorithm(direction)
