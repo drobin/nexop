@@ -21,10 +21,10 @@ class Nexop::Message::KexdhReply < Nexop::Message::Base
   # @return [String] Signature over {#H}
   add_field(:sig_h, type: :string) do |msg|
     raise ArgumentError, "sig_h: H cannot be nil" if msg.H.nil?
-    @signature ||= msg.hostkey.priv.sign(OpenSSL::Digest::SHA1.new, msg.H)
+    signature = msg.hostkey.priv.sign(OpenSSL::Digest::SHA1.new, msg.H)
 
     Nexop::Message::IO.string(:encode, "ssh-rsa") +
-    Nexop::Message::IO.string(:encode, @signature)
+    Nexop::Message::IO.string(:encode, signature)
   end
 
   ##
