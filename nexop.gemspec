@@ -8,9 +8,11 @@ Gem::Specification.new do |spec|
   spec.version       = Nexop::VERSION
   spec.authors       = ["Robin Doer"]
   spec.email         = ["robin@robind.de"]
-  spec.description   = %q{TODO: Write a gem description}
-  spec.summary       = %q{TODO: Write a gem summary}
-  spec.homepage      = ""
+  spec.description   = "SSH packet and transport layer implementation"
+  spec.summary       = "The Nexop library provides SSH daemon functionality " +
+                       "to be able to integrate SSH encryption abilities " +
+                       "into existing applications."
+  spec.homepage      = "https://github.com/drobin/nexop"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files`.split($/)

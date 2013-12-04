@@ -1,6 +1,20 @@
 # Nexop
 
-TODO: Write a gem description
+The *Nexop* library provides an implementation of the SSH packet- and
+transport-layer. The project does not provide a ready-to-use SSH-daemon! It
+enables you to integrate SSH encryption abilities into existing applications.
+With an open service architecture you are able to run any services (even
+self-implemented) on the top of SSH.
+
+There are already some services available, which are maintained in separate
+projects:
+
+  * [nexop-userauth](https://github.com/drobin/nexop-userauth) implements the
+    `ssh-userauth` service.
+
+## Usage
+
+Here you need an introduction into the usage of the library.
 
 ## Installation
 
@@ -15,10 +29,6 @@ And then execute:
 Or install it yourself as:
 
     $ gem install nexop
-
-## Usage
-
-TODO: Write usage instructions here
 
 ## Contributing
 
